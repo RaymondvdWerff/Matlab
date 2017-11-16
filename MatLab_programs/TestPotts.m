@@ -1,4 +1,4 @@
-%Testing the Potts model algorithms test.
+%Testing the Potts model algorithms.
 %{
 %Plot magnetization vs temperature.
 q = 2;
