@@ -1,5 +1,5 @@
 function [T1,C,iter] = Potts_Alg(T1,C_prime,A,A1,q,X,tol,temp)
-    
+    %test
     delta = tol + 1;
     iter = 0;
     maxiter = 700;
