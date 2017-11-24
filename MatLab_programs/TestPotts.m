@@ -1,5 +1,5 @@
 %Testing the Potts model algorithms.
-%{
+
 %Plot magnetization vs temperature.
 q = 2;
 
@@ -7,7 +7,7 @@ delta_4D = zeros(q,q,q,q);for i=1:q; delta_4D(i,i,i,i)=1; end
 spin1 = zeros(q,q,q,q);spin1(1,1,1,1)=1;
 
 t_begin = 1.05;
-t_step = 0.005;
+t_step = 0.0001;
 t_end = 1.25;
 
 ts = t_begin:t_step:t_end;
@@ -19,7 +19,7 @@ m3 = emptylist;
 X = [6];
 
 tol1 = 10^(-6);
-tol2 = 10^(-4);
+tol2 = 10^(-6);
 
 for x = 1:numel(X) 
     disp(['X = ' num2str(X(x))]);
@@ -43,42 +43,48 @@ for x = 1:numel(X)
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         B = ncon({spin1,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         
-        [T1,C1,iter1] = Potts_CTM2(T1,C1,B,A,q,X(x),tol1,t);
-        %[T2,C2,iter2] = Potts_Alg2(T2,C2,B,A,q,X(x),tol2,t);
+        [T1,C1,iter1] = Potts_Alg3(T1,C1,B,A,q,X(x),tol1,t);
+        [T2,C2,iter2] = Potts_CTM2(T2,C2,B,A,q,X(x),tol2,t);
         
-        n1 = collapse(C1,T1,B)/collapse(C1,T1,A);
+        %n1 = collapse(C1,T1,B)/collapse(C1,T1,A);
         %n2 = collapse(C2,T2,B)/collapse(C2,T2,A);
-        m1(i) = (q*n1-1)/(q-1);
+        %m1(i) = (q*n1-1)/(q-1);
         %m2(i) = (q*n2-1)/(q-1);
-        if x==1;m3(i)=m_exact(t);end
+        %if x==1;m3(i)=m_exact(t);end
+        
+        m1(i) = corrlen(T1);
+        m2(i) = corrlen(T2);
         
         iters1(i) = iter1;
-        %iters2(i) = iter2;
+        iters2(i) = iter2;
         i = i + 1; 
-    
+        
     end        
     toc
     
-    plot(ts,m1,'o-');
+    plot(ts,m1,'*-');
     hold on
-    %plot(ts,m2,'o-');
-    %hold on
+    plot(ts,m2,'o-');
+    hold on
 end
 
-%tcs
-%m0s
-
-plot(ts,m3,'o-');
+%plot(ts,m3,'o-');
 title(['Magnetization as a function of temperature for the ' num2str(q) '-state Potts model'])
 xlabel('temperature')
 ylabel('magnetization')
-axis([ts(1),ts(end),-0.1,1]);
+%axis([ts(1),ts(end),-0.1,1]);
 %legend(['X = ' num2str(X(1))],['X = ' num2str(X(2))],['X = ' num2str(X(3))],['X = ' num2str(X(4))],['X = ' num2str(X(5))],'Exact')
 %legend(['tol = ' num2str(tols(1))],['tol = ' num2str(tols(2))],['tol = ' num2str(tols(3))],['tol = ' num2str(tols(4))],['tol = ' num2str(tols(5))])
-%legend('CTM','Alg','Exact');
-%}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+legend('Alg3','CTM2');
 
+function y = corrlen(T)
+    M = ncon({T,T},{[-1,1,-3],[-2,1,-4]});
+    M = reshape(M,size(T,1)^2,size(T,1)^2);
+    vals = eigs(M,2,'LM');
+    y = 1/abs(log(abs(vals(1))/abs(vals(2))));
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%{
 %Determine the critical temperature for different bond dimensions.
 format long
 %{
@@ -146,9 +152,9 @@ end
 %comptime1 = [236,272,648,270,676,655,729,334,897,790,960,1392,1987,2594,3483,4499,6846,9788,9181,9987,13168,13569];
 
 %Alg tol=10^(-4) t_step=10^(-6)
-X1 = [20,25,30,35,40,45,50,55,60,65,70,75];
-tcs1 = [1.134902,1.134738,1.134720,1.134672,1.134656,1.134647,1.134633,1.134630,1.134624,1.134619,1.134613,1.134613];
-comptime1 = [1336,2131,3082,3956,5077,7203,10194,12856,15983,18138,23728,27544];
+%X1 = [20,25,30,35,40,45,50,55,60,65,70,75];
+%tcs1 = [1.134902,1.134738,1.134720,1.134672,1.134656,1.134647,1.134633,1.134630,1.134624,1.134619,1.134613,1.134613];
+%comptime1 = [1336,2131,3082,3956,5077,7203,10194,12856,15983,18138,23728,27544];
 
 %CTM2 tol=10^(-4) t_step=10^(-5)
 %X1 = [2,3,4,5,6,7,8,9,10,15,20,25,30,35,40,45,50,55,60,65,70,75];
@@ -161,15 +167,15 @@ comptime1 = [1336,2131,3082,3956,5077,7203,10194,12856,15983,18138,23728,27544];
 %comptime1 = [420,383,429,379,463,444,471,472,468,519,579,618,688,762,836,960,1092,1235,1366,1547,1718,1944];
 
 %CTM2 tol=10^(-8) t_step=10^(-6)
-%X1 = [20,25,30,35,40,45,50,55,60,65,70,75];
-%tcs1 = [1.134912,1.134847,1.134815,1.134797,1.134782,1.134779,1.134776,1.134773,1.134772,1.134774,1.134772,1.134770];    
-%comptime1 = [925,916,1008,1125,1229,1395,1572,1784,1951,2242,2452,2754];
+X1 = [20,25,30,35,40,45,50,55,60,65,70,75];
+tcs1 = [1.134912,1.134847,1.134815,1.134797,1.134782,1.134779,1.134776,1.134773,1.134772,1.134774,1.134772,1.134770];    
+comptime1 = [925,916,1008,1125,1229,1395,1572,1784,1951,2242,2452,2754];
 
 begin = 4;
 X2 = reshape(X1(begin:end),numel(X1)-begin+1,1);
 tcs2 = reshape(tcs1(begin:end),numel(tcs1)-begin+1,1);
 
-X3 = 15:0.01:75;
+X3 = 20:0.01:75;
 X4 = 10:0.01:100;
 
 myfittype = fittype('a + b*x^c');
@@ -201,7 +207,7 @@ Tc
 error = abs(Tc-err_Tc)
 disp('Exact critical temperature:');
 Tc_exact = 1/log(sqrt(2)+1)
-
+%}
 %{
 %Plot of the computation time as function of bond dimension.
 begin = 1;

@@ -16,6 +16,7 @@ function [T1,C,iter] = Potts_Alg(T1,C_prime,A,A1,q,X,tol,temp)
         
         [T2,~] = eigs(@(x)leadingvec(x,T1l,A),q*X^2,1,'LM');     
         T2 = reshape(T2,[X,q,X]);
+        T2 = T2 + permute(T2,[3,2,1]);
         
         [T2r,C_prime] = LeftOrthonormalize3(permute(T2,[3,2,1]),C,tol,temp);
         T2r = real(T2r);C_prime = real(C_prime);
@@ -24,7 +25,7 @@ function [T1,C,iter] = Potts_Alg(T1,C_prime,A,A1,q,X,tol,temp)
         
         [T1,~] = eigs(@(x)leadingvec(x,permute(T2r,[3,2,1]),A),q*X^2,1,'LM');
         T1 = reshape(T1,[X,q,X]);
-        T1 = permute(T1,[3,2,1]);
+        T1 = T1 + permute(T1,[3,2,1]);
         
         delta = sqrt(ncon({C-C_prime,conj(C-C_prime)},{[1,2],[1,2]})); 
         
