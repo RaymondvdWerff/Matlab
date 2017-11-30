@@ -7,19 +7,20 @@ delta_4D = zeros(q,q,q,q);for i=1:q; delta_4D(i,i,i,i)=1; end
 spin1 = zeros(q,q,q,q);spin1(1,1,1,1)=1;
 
 t_begin = 1.05;
-t_step = 0.0001;
+t_step = 5e-4;
 t_end = 1.25;
 
 ts = t_begin:t_step:t_end;
 emptylist = zeros(numel(ts),1);
 
-m3 = emptylist;
+m = emptylist;
 
 %X = [2,4,6,8,10,15,20,25,30];
-X = [6];
+X = [40];
 
-tol1 = 10^(-6);
-tol2 = 10^(-6);
+%tol1 = 10^(-10);
+%tol2 = 10^(-3);
+tol3 = 1e-6;
 
 for x = 1:numel(X) 
     disp(['X = ' num2str(X(x))]);
@@ -28,14 +29,18 @@ for x = 1:numel(X)
     m1 = emptylist;
     m2 = emptylist;
     m3 = emptylist;
+    m = emptylist;
     iters1 = emptylist;
     iters2 = emptylist;
+    iters3 = emptylist;
     i = 1;
     
     T1 = rand(X(x),q,X(x));T1 = T1 + permute(T1,[3,2,1]);
     C1 = rand(X(x),X(x));C1 = C1 + permute(C1,[2,1]);
     T2 = T1;
     C2 = C1;
+    T3 = T1;
+    C3 = C1;
     
     for t = t_begin:t_step:t_end
         
@@ -43,39 +48,42 @@ for x = 1:numel(X)
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         B = ncon({spin1,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         
-        [T1,C1,iter1] = Potts_Alg3(T1,C1,B,A,q,X(x),tol1,t);
-        [T2,C2,iter2] = Potts_CTM2(T2,C2,B,A,q,X(x),tol2,t);
+        %[T1,C1,iter1] = Potts_CTM2(T1,C1,B,A,q,X(x),tol1,t);
+        %[T2,C2,iter2] = Potts_Alg3(T2,C2,B,A,q,X(x),tol2,t);
+        [T3,C3,iter3] = Potts_Alg4(T3,C3,B,A,q,X(x),tol3,t);
         
         %n1 = collapse(C1,T1,B)/collapse(C1,T1,A);
         %n2 = collapse(C2,T2,B)/collapse(C2,T2,A);
+        n3 = collapse(C3,T3,B)/collapse(C3,T3,A);
         %m1(i) = (q*n1-1)/(q-1);
         %m2(i) = (q*n2-1)/(q-1);
-        %if x==1;m3(i)=m_exact(t);end
+        m3(i) = (q*n3-1)/(q-1);
+        if x==1;m(i)=m_exact(t);end
         
-        m1(i) = corrlen(T1);
-        m2(i) = corrlen(T2);
+        %m1(i) = corrlen(T1);
+        %m2(i) = corrlen(T2);
         
-        iters1(i) = iter1;
-        iters2(i) = iter2;
+        %iters1(i) = iter1;
+        %iters2(i) = iter2;
+        iters3(i) = iter3;
         i = i + 1; 
         
     end        
     toc
     
-    plot(ts,m1,'*-');
-    hold on
-    plot(ts,m2,'o-');
-    hold on
+    %plot(ts,m1,'+-');hold on;
+    %plot(ts,m2,'o-');hold on;
+    plot(ts,m3,'x-');hold on;
 end
 
-%plot(ts,m3,'o-');
+plot(ts,m,'o-');
 title(['Magnetization as a function of temperature for the ' num2str(q) '-state Potts model'])
 xlabel('temperature')
 ylabel('magnetization')
 %axis([ts(1),ts(end),-0.1,1]);
 %legend(['X = ' num2str(X(1))],['X = ' num2str(X(2))],['X = ' num2str(X(3))],['X = ' num2str(X(4))],['X = ' num2str(X(5))],'Exact')
 %legend(['tol = ' num2str(tols(1))],['tol = ' num2str(tols(2))],['tol = ' num2str(tols(3))],['tol = ' num2str(tols(4))],['tol = ' num2str(tols(5))])
-legend('Alg3','CTM2');
+legend('Alg4','Exact');
 
 function y = corrlen(T)
     M = ncon({T,T},{[-1,1,-3],[-2,1,-4]});
@@ -83,19 +91,46 @@ function y = corrlen(T)
     vals = eigs(M,2,'LM');
     y = 1/abs(log(abs(vals(1))/abs(vals(2))));
 end
+
+function [C0,T0] = beginmatrices(Qsq,A,X)
+    q = size(A,1);
+    delta_3D = zeros(q,q,q);for i=1:q; delta_3D(i,i,i)=1; end
+    C0 = ncon({Qsq,Qsq},{[-1,1],[1,-2]});
+    T0 = ncon({delta_3D,Qsq,Qsq,Qsq},{[1,2,3],[-1,1],[-2,2],[-3,3]});
+    
+    while size(T0,1) < X
+        CT = ncon({C0,T0},{[1,-2],[-1,-3,1]});
+        TA = ncon({T0,A},{[-1,1,-4],[1,-2,-3,-5]});
+        M = ncon({CT,TA},{[-1,1,2],[1,2,-2,-3,-4]});
+        C0 = reshape(M,q*size(T0,1),q*size(T0,1));
+        T0 = reshape(TA,[q*size(T0,1),q,q*size(T0,1)]);
+        C0 = (C0+permute(C0,[2,1]))./max(abs(C0(:)));
+        T0 = (T0+permute(T0,[3,2,1]))./max(abs(T0(:)));
+    end
+    
+    if size(T0,1) > X
+        [U,~,~] = svd(C0);
+        U_til = U(:,1:X);
+        C0 = ncon({C0,U_til,U_til},{[1,2],[1,-1],[2,-2]});
+        T0 = ncon({T0,U_til,U_til},{[1,-2,2],[1,-1],[2,-3]});
+        C0 = (C0+permute(C0,[2,1]))./max(abs(C0(:)));
+        T0 = (T0+permute(T0,[3,2,1]))./max(abs(T0(:)));
+    end
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 %Determine the critical temperature for different bond dimensions.
 format long
-%{
+
 q = 2;
 
 delta_4D = zeros(q,q,q,q);for i=1:q; delta_4D(i,i,i,i)=1; end
 spin1 = zeros(q,q,q,q);spin1(1,1,1,1)=1;
 
-tol1 = 10^(-8);
+tol1 = 10^(-4);
 
-X = [20,25,30,35,40,45,50,55,60,65,70,75];
+X = [6];
 tcs = zeros(numel(X),1);
 
 for x = 1:numel(X)
@@ -122,7 +157,7 @@ for x = 1:numel(X)
             A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
             B = ncon({spin1,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
 
-            [T1,C1,~] = Potts_CTM2(T1,C1,B,A,q,X(x),tol1,t);
+            [T1,C1,~] = Potts_Alg3(T1,C1,B,A,q,X(x),tol1,t);
 
             n1 = collapse(C1,T1,B)/collapse(C1,T1,A);
             m1(i) = (q*n1-1)/(q-1);
@@ -145,7 +180,7 @@ for x = 1:numel(X)
     tcs(x) = tc;
 end
 %}
-
+%{
 %Alg tol=10^(-4) t_step=10^(-5)
 %X1 = [2,3,4,5,6,7,8,9,10,15,20,25,30,35,40,45,50,55,60,65,70,75];
 %tcs1 = [1.16333,1.15806,1.14059,1.13989,1.13720,1.13686,1.13703,1.13617,1.13550,1.13503,1.13492,1.13474,1.13471,1.13468,1.13466,1.13465,1.13464,1.13463,1.13462,1.13462,1.13462,1.13462];
