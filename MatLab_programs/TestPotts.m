@@ -1,14 +1,14 @@
 %Testing the Potts model algorithms.
-
+%{
 %Plot magnetization vs temperature.
 q = 2;
 
 delta_4D = zeros(q,q,q,q);for i=1:q; delta_4D(i,i,i,i)=1; end
 spin1 = zeros(q,q,q,q);spin1(1,1,1,1)=1;
 
-t_begin = 1.05;
-t_step = 5e-4;
-t_end = 1.25;
+t_begin = 1.1;
+t_step = 1e-3;
+t_end = 1.15;
 
 ts = t_begin:t_step:t_end;
 emptylist = zeros(numel(ts),1);
@@ -91,33 +91,39 @@ function y = corrlen(T)
     vals = eigs(M,2,'LM');
     y = 1/abs(log(abs(vals(1))/abs(vals(2))));
 end
+%}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [C0,T0] = beginmatrices(Qsq,A,X)
-    q = size(A,1);
-    delta_3D = zeros(q,q,q);for i=1:q; delta_3D(i,i,i)=1; end
-    C0 = ncon({Qsq,Qsq},{[-1,1],[1,-2]});
-    T0 = ncon({delta_3D,Qsq,Qsq,Qsq},{[1,2,3],[-1,1],[-2,2],[-3,3]});
-    
-    while size(T0,1) < X
-        CT = ncon({C0,T0},{[1,-2],[-1,-3,1]});
-        TA = ncon({T0,A},{[-1,1,-4],[1,-2,-3,-5]});
-        M = ncon({CT,TA},{[-1,1,2],[1,2,-2,-3,-4]});
-        C0 = reshape(M,q*size(T0,1),q*size(T0,1));
-        T0 = reshape(TA,[q*size(T0,1),q,q*size(T0,1)]);
-        C0 = (C0+permute(C0,[2,1]))./max(abs(C0(:)));
-        T0 = (T0+permute(T0,[3,2,1]))./max(abs(T0(:)));
-    end
-    
-    if size(T0,1) > X
-        [U,~,~] = svd(C0);
-        U_til = U(:,1:X);
-        C0 = ncon({C0,U_til,U_til},{[1,2],[1,-1],[2,-2]});
-        T0 = ncon({T0,U_til,U_til},{[1,-2,2],[1,-1],[2,-3]});
-        C0 = (C0+permute(C0,[2,1]))./max(abs(C0(:)));
-        T0 = (T0+permute(T0,[3,2,1]))./max(abs(T0(:)));
-    end
-end
+%Determine magnetization as a function of iteration number/time
+q = 2;
+X = 6;
+t = 1.1346;
+maxiter = 500;
+tol = 1e-8;
 
+Qsq = sqrtm(ones(q)+(exp(1/t)-1)*eye(q));
+A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
+B = ncon({spin1,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
+%C = rand(X,X);
+%T = rand(X,q,X);
+[C,T] = beginmatrices(Qsq,A,X);
+
+tic
+[iters1,ticks1,m1] = converge_m_Alg4(T,B,A,q,X,t,maxiter,tol);
+toc
+
+tic
+[iters2,ticks2,m2] = converge_m_CTM2(C,T,B,A,q,X,maxiter,tol);
+toc
+
+plot(ticks1,m1,'r');hold on;
+plot(ticks1(end),m1(end),'*r');hold on;
+plot(ticks2,m2,'b');hold on;
+plot(ticks2(end),m2(end),'*b');hold on;
+xlabel('Iteration number');
+ylabel('Magnetization');
+title(['Magnetization as a function of time for the ' num2str(q) '-state Potts model for X = ' num2str(X)' ' at T = ' num2str(t)]);
+legend('Alg4','','CTM2','');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 %Determine the critical temperature for different bond dimensions.
@@ -440,3 +446,28 @@ xlabel('temperature')
 ylabel('magnetic field strength')
 zlabel('magnetization')
 %}
+function [C0,T0] = beginmatrices(Qsq,A,X)
+    q = size(A,1);
+    delta_3D = zeros(q,q,q);for i=1:q; delta_3D(i,i,i)=1; end
+    C0 = ncon({Qsq,Qsq},{[-1,1],[1,-2]});
+    T0 = ncon({delta_3D,Qsq,Qsq,Qsq},{[1,2,3],[-1,1],[-2,2],[-3,3]});
+    
+    while size(T0,1) < X
+        CT = ncon({C0,T0},{[1,-2],[-1,-3,1]});
+        TA = ncon({T0,A},{[-1,1,-4],[1,-2,-3,-5]});
+        M = ncon({CT,TA},{[-1,1,2],[1,2,-2,-3,-4]});
+        C0 = reshape(M,q*size(T0,1),q*size(T0,1));
+        T0 = reshape(TA,[q*size(T0,1),q,q*size(T0,1)]);
+        C0 = (C0+permute(C0,[2,1]))./max(abs(C0(:)));
+        T0 = (T0+permute(T0,[3,2,1]))./max(abs(T0(:)));
+    end
+    
+    if size(T0,1) > X
+        [U,~,~] = svd(C0);
+        U_til = U(:,1:X);
+        C0 = ncon({C0,U_til,U_til},{[1,2],[1,-1],[2,-2]});
+        T0 = ncon({T0,U_til,U_til},{[1,-2,2],[1,-1],[2,-3]});
+        C0 = (C0+permute(C0,[2,1]))./max(abs(C0(:)));
+        T0 = (T0+permute(T0,[3,2,1]))./max(abs(T0(:)));
+    end
+end
