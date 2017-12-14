@@ -6,15 +6,14 @@ function [iters,ticks,m] = converge_m_Alg4(T,A0,A1,q,X,temp,maxiter,tol)
     for iter = 1:maxiter
         
         if iter == 1
-            A = A0;
+            A = A1;
         end
         if iter > 1
             A = A1;
         end
         
         [Tl,C] = LeftOrthonormalize5(T,1e-6,temp);
-        Tl = real(Tl);C = real(C);
-        
+    
         T = arnoldi(permute(Tl,[3,2,1]),A,reshape(T,q*X^2,1),min(q*X^2,15),1e-6);
         T = reshape(T,[X,q,X]);
         T = T + permute(T,[3,2,1]);
@@ -29,6 +28,9 @@ function [iters,ticks,m] = converge_m_Alg4(T,A0,A1,q,X,temp,maxiter,tol)
             end
         end
     end
+    if iter == maxiter
+        disp('converge_m_Alg4 not converged');
+    end 
     iters = 1:iter;
 end
 

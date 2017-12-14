@@ -1,7 +1,13 @@
-function y = m_exact(x)
-    if x < 1/log(1+sqrt(2))
-        y = (1-sinh(1/x)^(-4))^(1/8);
-    else
-        y = 0;
+function y = m_exact(ts)
+    
+    y = zeros(numel(ts),1);
+    
+    for temp = 1:numel(ts)
+        t = ts(temp);
+        if t < 1/log(1+sqrt(2))
+            y(temp) = (1-sinh(1/t)^(-4))^(1/8);
+        else
+            y(temp) = 0;
+        end
     end
 end

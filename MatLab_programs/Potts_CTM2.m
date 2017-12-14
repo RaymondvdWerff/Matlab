@@ -1,15 +1,12 @@
-function [T,C,iter] = Potts_CTM2(T,C,A,A1,q,X,tol,temp)
+function [T,C,iter,tictoc] = Potts_CTM2(T,C,A,q,X,tol,temp)
     
     delta = tol + 1;    
     iter = 0;
     maxiter = 5000;
     Cold = rand(X,X);
     
+    tic;
     while delta > tol
-        
-        if iter > 0
-            A = A1;
-        end
         
         N = ncon({T,A},{[-1,1,-4],[1,-2,-3,-5]});
         M = ncon({C,T,N},{[1,2],[1,3,-1],[2,3,-2,-3,-4]});
@@ -32,6 +29,7 @@ function [T,C,iter] = Potts_CTM2(T,C,A,A1,q,X,tol,temp)
             disp(['Potts_CTM2 not converged at T = ' num2str(temp)]);
             break
         end            
-    end       
+    end
+    tictoc = toc;
 end
  

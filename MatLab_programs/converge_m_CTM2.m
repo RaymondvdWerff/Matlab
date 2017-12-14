@@ -35,5 +35,8 @@ function [iters,ticks,m] = converge_m_CTM2(C,T,A0,A1,q,X,maxiter,tol)
             end
         end
     end
+    if iter == maxiter
+        disp('converge_m_CTM2 not converged');
+    end 
     iters = 1:iter;
 end

@@ -1,34 +1,31 @@
-function [T,C,iter] = Potts_Alg4(T,C_prime,A,A1,q,X,tol,temp)
+function [T,C,iter,tictoc] = Potts_Alg4(T,C_notused,A,q,X,tol,temp)
     
     delta = tol + 1;
     iter = 0;
     maxiter = 1000;
     opts.isreal = false;
-    Cold = eye(X);
+    sold = rand(X);
     
+    tic;
     while delta > tol
         
-        if iter > 0
-            A = A1;
-        end
-        
         [Tl,C] = LeftOrthonormalize5(T,1e-6,temp);
-        Tl = real(Tl);C = real(C);
+        [~,s,~] = svd(C);s = s./max(s(:));
         
         T = arnoldi(permute(Tl,[3,2,1]),A,reshape(T,q*X^2,1),min(q*X^2,15),tol);
         T = reshape(T,[X,q,X]);
         T = T + permute(T,[3,2,1]);
         
-        delta = sqrt(ncon({C-Cold,conj(C-Cold)},{[1,2],[1,2]})); 
+        delta = sum(sum(abs(s-sold))); 
         
         iter = iter + 1;
         if iter > maxiter
             disp(['Potts_Alg4 not converged at T = ' num2str(temp)]);
             break
         end
-        Cold = C;
-        
+        sold = s;
     end
+    tictoc = toc;
 end
 
 function v = arnoldi(M1,M2,b,m,tol)
