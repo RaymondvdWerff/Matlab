@@ -6,12 +6,12 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(q,X,tol,maxiter,t
     A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
     B = ncon({spin1_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
     [~,T] = beginmatrices(Qsq,A,X);
+    tictocs = [0];
     i = 1;
-    
-    tic   
+      
     for iter = 1:maxiter
-
-        [Tl,C] = LeftOrthonormalize(T,tol,maxiter/10,temp);
+        tic;
+        [Tl,C] = LeftOrthonormalize(T,min(tol,1e-6),maxiter/10,temp);
         [~,s,~] = svd(C);s = s/max(s(:));
         
         opts.v0 = reshape(T,q*X^2,1);
@@ -19,7 +19,7 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(q,X,tol,maxiter,t
         T = reshape(T,[X,q,X]);
         T = T + permute(T,[3,2,1]);
         
-        tictocs(iter) = toc;
+        tictocs(iter) = tictocs(end) + toc;
         n = collapse(C,T,B)/collapse(C,T,A);
         m(iter) = (q*n-1)/(q-1);
         

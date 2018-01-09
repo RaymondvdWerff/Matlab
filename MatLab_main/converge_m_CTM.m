@@ -7,10 +7,10 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_CTM(q,X,tol,maxiter,te
     B = ncon({spin1_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
     [C,T] = beginmatrices(Qsq,A,X);
     i = 1;
-    
-    tic    
+    tictocs = [0];
+       
     for iter = 1:maxiter
-
+        tic;
         N = ncon({T,A},{[-1,1,-4],[1,-2,-3,-5]});
         M = ncon({C,T,N},{[1,2],[1,3,-1],[2,3,-2,-3,-4]});
         
@@ -22,9 +22,9 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_CTM(q,X,tol,maxiter,te
         T = ncon({U,N,U},{[1,2,-1],[1,2,-2,3,4],[3,4,-3]});
         T = (T + permute(T,[3,2,1]))/max(T(:));
         
+        tictocs(iter) = tictocs(end) + toc;
         n = collapse(C,T,B)/collapse(C,T,A);
         m(iter) = (q*n-1)/(q-1);
-        tictocs(iter) = toc;
         
         if iter > 1
             %m(iter) = sum(sum(abs(s-sold)));
