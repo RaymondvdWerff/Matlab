@@ -1,11 +1,14 @@
-function [C,T,iter] = Potts_FPCM(A,C,T,q,X,tol,maxiter,temp)
-
+function [C,T,iter] = FPCM(A,C,T,X,tol,maxiter,temp)
+    
+    q = size(A,1);
+    
     for iter = 1:maxiter
         
         [Tl,C] = LeftOrthonormalize(T,tol,maxiter/10,temp);
         [~,s,~] = svd(C);s = s/max(s(:));
         
         opts.v0 = reshape(T,q*X^2,1);
+        opts.tol = 1e-2;
         [T,~] = eigs(@(x)mult2(Tl,A,x),q*X^2,1,'LM',opts);
         T = reshape(T,[X,q,X]);
         T = T + permute(T,[3,2,1]);
@@ -20,7 +23,7 @@ function [C,T,iter] = Potts_FPCM(A,C,T,q,X,tol,maxiter,temp)
     end
     
     if iter == maxiter
-        disp(['Potts_FPCM not converged at T = ' num2str(temp)]);
+        disp(['FPCM not converged at T = ' num2str(temp)]);
     end 
 end
 

@@ -1,4 +1,4 @@
-function [corr,iters,tictocs] = compute_corr(q,X,tol,maxiter,ts,func)
+function [corr,iters,tictocs] = compute_corr(Q,q,X,tol,maxiter,ts,func)
     
     emptylist = zeros(1,numel(ts));    
     corr = emptylist;
@@ -10,12 +10,12 @@ function [corr,iters,tictocs] = compute_corr(q,X,tol,maxiter,ts,func)
     for t = 1:numel(ts)
         
         temp = ts(t);
-        Qsq = sqrtm(ones(q)+(exp(1/temp)-1)*eye(q));
+        Qsq = sqrtm(Q(q,temp));
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         [C,T] = beginmatrices(Qsq,A,X);
         
         tic
-        [~,T,iter] = func(A,C,T,q,X,tol,maxiter,temp);
+        [~,T,iter] = func(A,C,T,X,tol,maxiter,temp);
         
         corr(t) = corrlen(T);
         tictocs(t) = toc;

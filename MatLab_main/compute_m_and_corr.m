@@ -1,4 +1,4 @@
-function [m,corr,iters,tictocs] = compute_m_and_corr(q,X,tol,maxiter,ts,func)
+function [m,corr,iters,tictocs] = compute_m_and_corr(Q,q,X,tol,maxiter,ts,func)
     
     emptylist = zeros(1,numel(ts));    
     m = emptylist;
@@ -12,13 +12,13 @@ function [m,corr,iters,tictocs] = compute_m_and_corr(q,X,tol,maxiter,ts,func)
     for t = 1:numel(ts)
         
         temp = ts(t);
-        Qsq = sqrtm(ones(q)+(exp(1/temp)-1)*eye(q));
+        Qsq = sqrtm(Q(q,temp));
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         B = ncon({spin1_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         [C,T] = beginmatrices(Qsq,A,X);
         
         tic
-        [C,T,iter] = func(A,C,T,q,X,tol,maxiter,temp);
+        [C,T,iter] = func(A,C,T,X,tol,maxiter,temp);
 
         n = collapse(C,T,B)/collapse(C,T,A);
         m(t) = (q*n-1)/(q-1);

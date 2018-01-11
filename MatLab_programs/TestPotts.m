@@ -1,35 +1,40 @@
-%Testing the Potts model algorithms.
-%{
+%Testing CTM and FPCM with the Potts model.
+
 %Plot magnetization vs temperature.
 q = 2;
 X = 20;
-tol1 = 1e-5;
+tol1 = 3;
 tol2 = 1e-4;
 maxiter = 10000;
 
-t_begin = 1.13;
-t_step = 1e-4;
-t_end = 1.14;
+t_begin = 0.8;
+t_step = 0.01;
+t_end = 1.2;
 
 ts = t_begin:t_step:t_end;
-m = m_exact(ts);
 
-[m1,iters1,tictocs1] = compute_m(q,X,tol1,maxiter,ts,@Potts_CTM);
-[m2,iters2,tictocs2] = compute_m(q,X,tol2,maxiter,ts,@Potts_FPCM);
+%for X = 10:10:50
+%    [m1,iters1,tictocs1] = compute_m(@Q_Potts,q,X,tol1,maxiter,ts,@FPCM);
+%    plot(ts,m1,'+-');hold on;
+%end
 
-plot(ts,tictocs1,'+-');hold on;
-plot(ts,tictocs2,'x-');hold on;
+[m1,iters1,tictocs1] = compute_m(@Q_Potts,q,X,10^(-tol1),maxiter,ts,@FPCM);
+save(['P_m_q' num2str(q) 'X' num2str(X) 'tol' num2str(tol1) '_FPCM'],'ts','m1','iters1','tictocs1');
+%[mx2,my2,iters2,tictocs2] = compute_m2(@Q_clock,q,X,tol2,maxiter,ts,@FPCM);
+%plot(ts,m1,'+-');hold on;
+%plot(ts,sqrt(mx2.^2+my2.^2),'x-');hold on;
+
+%Exact solution Potts model:
+%m = m_exact(ts/2);
 %plot(ts,m,'o-');
 
-title(['Computation time as a function of temperature for the ' num2str(q) '-state Potts model']);
-xlabel('temperature');
-ylabel('computation time (s)');
-%ylabel('time (s)');
-%axis([ts(1),ts(end),-0.1,1]);
-%legend(['X = ' num2str(X(1))],['X = ' num2str(X(2))],['X = ' num2str(X(3))],['X = ' num2str(X(4))],['X = ' num2str(X(5))],'Exact')
-%legend(['CTM tol = ' num2str(tol1)],['FPCM tol = ' num2str(tols2(1))],['FPCM tol = ' num2str(tols2(2))],['FPCM tol = ' num2str(tols2(3))],['FPCM tol = ' num2str(tols2(4))])
-legend('CTM','FPCM');
-%}
+%title(['Magnetization as a function of temperature for the ' num2str(q) '-state clock model']);
+%xlabel('temperature');
+%ylabel('magnatization');
+%legend(['X = ' num2str(X(1))],['X = ' num2str(X(2))],['X = ' num2str(X(3))],['X = ' num2str(X(4))],['X = ' num2str(X(5))])
+%legend(['tol = ' num2str(tols(1))],['tol = ' num2str(tols(2))])
+%legend('CTM','FPCM');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 %Plot correlation length vs temperature.
@@ -45,7 +50,7 @@ t_end = 1.14;
 ts = t_begin:t_step:t_end;
 
 for tol = 1:numel(tols)
-    [corr,iters,tictocs] = compute_corr(q,X,tols(tol),maxiter,ts,@Potts_FPCM);
+    [corr,iters,tictocs] = compute_corr(@Q_Potts,q,X,tols(tol),maxiter,ts,@FPCM);
     plot(ts,corr,'o-');hold on;
 end
 
@@ -68,7 +73,7 @@ t_end = 1.13488;
 
 ts = t_begin:t_step:t_end;
 
-[m,corr,iters,tictocs] = compute_m_and_corr(q,X,tol,maxiter,ts,@Potts_FPCM);
+[m,corr,iters,tictocs] = compute_m_and_corr(@Q_Potts,q,X,tol,maxiter,ts,@FPCM);
 corr = corr/max(abs(corr(:)));
 %save('test.mat','m')
 index = steepslope(m);
@@ -99,7 +104,7 @@ K = 4:4:q*X^2;
 for k = 1:numel(K)
     K(k)
     tic
-    [m,iters,tictocs] = compute_m(q,X,tol,maxiter,K(k),ts,@Potts_FPCM);
+    [m,iters,tictocs] = compute_m(@Q_Potts,q,X,tol,maxiter,K(k),ts,@FPCM);
     toc
     plot(ts,tictocs,'o-');hold on;
 end
@@ -112,18 +117,18 @@ legend(['k = ' num2str(K(1))],['k = ' num2str(K(2))],['k = ' num2str(K(3))],['k 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 %Determine magnetization as a function of iteration number/time
-q = 2;
+q = 6;
 X = 20;
 %tc = 1/log(1+sqrt(2));
 %t = tc + 1e-3;
-temp = 1.1348;
-maxiter1 = 10000;
+temp = 0.9;
+maxiter1 = 4000;
 maxiter2 = 1000;
 tol = 1e-8;
 tols = [1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-7,1e-8];
 
-[m1,iters1,tictocs1,imarkers1,tmarkers1] = converge_m_CTM(q,X,tol,maxiter1,temp,tols);
-[m2,iters2,tictocs2,imarkers2,tmarkers2] = converge_m_FPCM(q,X,tol,maxiter2,temp,tols);
+[m1,iters1,tictocs1,imarkers1,tmarkers1] = converge_m_CTM(@Q_clock,q,X,tol,maxiter1,temp,tols);
+[m2,iters2,tictocs2,imarkers2,tmarkers2] = converge_m_FPCM(@Q_clock,q,X,tol,maxiter2,temp,tols);
 %{
 %As a function of iteration number.
 plot(iters1,m1,'b');hold on;
@@ -157,8 +162,8 @@ xlabel('time (s)');
 ylabel('Magnetization');
 title(['Magnetization as a function of time for the ' num2str(q) '-state Potts model for X = ' num2str(X) ' at T = ' num2str(temp)]);
 legend('CTM','FPCM');
-
 %}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 %Determine the critical temperature for different bond dimensions.
@@ -193,12 +198,12 @@ for x = 1:numel(X)
         
         for t = t_begin:t_step:t_end
             
-            Qsq = sqrtm(ones(q)+(exp(1/t)-1)*eye(q));
+            Qsq = sqrtm(Q_Potts(q,t));
             A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
             B = ncon({spin1_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
             [C,T] = beginmatrices(Qsq,A,X(x));
             
-            [C,T,~] = Potts_FPCM(A,C,T,q,X(x),tol,maxiter,t);
+            [C,T,~] = FPCM(A,C,T,q,X(x),tol,maxiter,t);
 
             %n = collapse(C,T,B)/collapse(C,T,A);
             %m(i) = (q*n-1)/(q-1);
@@ -299,7 +304,7 @@ for x = 1:numel(X)
     tcs(x) = tc;
 end
 %}
-
+%{
 %Alg tol=10^(-4) t_step=10^(-5)
 %X1 = [2,3,4,5,6,7,8,9,10,15,20,25,30,35,40,45,50,55,60,65,70,75];
 %tcs1 = [1.16333,1.15806,1.14059,1.13989,1.13720,1.13686,1.13703,1.13617,1.13550,1.13503,1.13492,1.13474,1.13471,1.13468,1.13466,1.13465,1.13464,1.13463,1.13462,1.13462,1.13462,1.13462];
@@ -374,7 +379,7 @@ Tc
 error = abs(Tc-err_Tc)
 disp('Exact critical temperature:');
 Tc_exact = 1/log(sqrt(2)+1)
-
+%}
 %{
 %Plot of the computation time as function of bond dimension.
 begin = 1;
@@ -430,12 +435,12 @@ for x = 1:numel(X)
     
     for t = t_begin:t_step:t_end
         
-        Qsq = sqrtm(ones(q)+(exp(1/t)-1)*eye(q));
+        Qsq = sqrtm(Q_Potts(q,t));
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         B = ncon({spin1,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         
-        [T1,C1,iter1] = Potts_CTM(T1,C1,B,A,q,X(x),tol1,t);
-        [T2,C2,iter2] = Potts_Alg(T2,C2,B,A,q,X(x),tol2,t);
+        [T1,C1,iter1] = CTM(T1,C1,B,A,q,X(x),tol1,t);
+        [T2,C2,iter2] = FPCM(T2,C2,B,A,q,X(x),tol2,t);
         
         k1 = collapse(C1,T1,A)*ncon({C1,C1,C1,C1},{[1,2],[2,3],[3,4],[4,1]})/collapse2(C1,T1)^2;
         k2 = collapse(C2,T2,A)*ncon({C2,C2,C2,C2},{[1,2],[2,3],[3,4],[4,1]})/collapse2(C2,T2)^2;
@@ -568,7 +573,7 @@ xlabel('temperature')
 ylabel('magnetic field strength')
 zlabel('magnetization')
 %}
-
+%{
 function y = corrlen(T)
     %M = ncon({T,T},{[-1,1,-3],[-2,1,-4]});
     %M = reshape(M,size(T,1)^2,size(T,1)^2);
@@ -633,3 +638,4 @@ function index = maximum(m)
         end
     end
 end
+%}

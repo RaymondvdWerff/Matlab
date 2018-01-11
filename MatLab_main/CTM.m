@@ -1,4 +1,4 @@
-function [C,T,iter] = Potts_CTM(A,C,T,q,X,tol,maxiter,temp)
+function [C,T,iter] = CTM(A,C,T,X,tol,maxiter,temp)
 
     for iter = 1:maxiter
 
@@ -24,7 +24,7 @@ function [C,T,iter] = Potts_CTM(A,C,T,q,X,tol,maxiter,temp)
     end
     
     if (iter == maxiter) && (maxiter > 10)
-        disp(['Potts_CTM not converged at T = ' num2str(temp)]);
+        disp(['CTM not converged at T = ' num2str(temp)]);
     end 
 end
  
