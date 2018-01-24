@@ -11,8 +11,8 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(Q,q,X,tol,maxiter
     Bx = ncon({spinx_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
     By = ncon({spiny_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         
-    %[~,T] = beginmatrices(Qsq,A,X);
-    T = rand(X,q,X); T = T + permute(T,[3,2,1]);
+    [~,T] = beginmatrices(Qsq,A,X);
+    %T = rand(X,q,X); T = T + permute(T,[3,2,1]);
     tictocs = [0];
     i = 1;
       
@@ -29,9 +29,10 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(Q,q,X,tol,maxiter
         
         tictocs(iter) = tictocs(end) + toc;
         
-        mx = collapse(C,T,Bx)/collapse(C,T,A);
-        my = collapse(C,T,By)/collapse(C,T,A);
-        m(iter) = sqrt(mx^2+my^2);
+        %mx(iter) = collapse(C,T,Bx)/collapse(C,T,A);
+        m(iter) = collapse(C,T,By)/collapse(C,T,A);
+        %m(iter) = collapse(C,T,B)/collapse(C,T,A);
+        %m(iter) = sqrt(mx^2+my^2);
         %n = collapse(C,T,B)/collapse(C,T,A);
         %m(iter) = (q*n-1)/(q-1);
         
@@ -123,14 +124,13 @@ function [C0,T0] = beginmatrices(Qsq,A,X)
     spin1_4D = zeros(q,q,q,q);spin1_4D(1,1,1,1)=1;
     C0 = ncon({spin1_2D,Qsq,Qsq},{[1,2],[-1,1],[-2,2]});
     T0 = ncon({spin1_3D,Qsq,Qsq,Qsq},{[1,2,3],[-1,1],[-2,2],[-3,3]});
-    B = ncon({spin1_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
     
     while size(T0,1) < X
         CT = ncon({C0,T0},{[1,-2],[-1,-3,1]});
-        TB = ncon({T0,B},{[-1,1,-4],[1,-2,-3,-5]});
-        M = ncon({CT,TB},{[-1,1,2],[1,2,-2,-3,-4]});
+        TA = ncon({T0,A},{[-1,1,-4],[1,-2,-3,-5]});
+        M = ncon({CT,TA},{[-1,1,2],[1,2,-2,-3,-4]});
         C0 = reshape(M,q*size(T0,1),q*size(T0,1));
-        T0 = reshape(TB,[q*size(T0,1),q,q*size(T0,1)]);
+        T0 = reshape(TA,[q*size(T0,1),q,q*size(T0,1)]);
         C0 = (C0+permute(C0,[2,1]))./max(abs(C0(:)));
         T0 = (T0+permute(T0,[3,2,1]))./max(abs(T0(:)));
     end

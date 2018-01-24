@@ -1,16 +1,13 @@
-function [C,T,iter] = FPCM(A,C,T,X,tol,maxiter,temp)
+function [C,T,iter] = FPCM2(A,C,T,X,tol,maxiter,temp)
     
     q = size(A,1);
-    p = 12;
+    
     for iter = 1:maxiter
         
-        [Tl,C] = LeftOrthonormalize(T,tol,maxiter/10,temp,p);
+        [Tl,C] = LeftOrthonormalize(T,tol,maxiter/10,temp);
         [~,s,~] = svd(C);s = s/max(s(:));
-        
-        opts.v0 = reshape(T,q*X^2,1);
-        opts.tol = 1e-2;
-        opts.p = p;
-        [T,~] = eigs(@(x)mult2(Tl,A,x),q*X^2,1,'LM',opts);
+
+        T = leadingvec(Tl,A,T,@mult2);
         T = reshape(T,[X,q,X]);
         T = T + permute(T,[3,2,1]);
 
@@ -28,7 +25,7 @@ function [C,T,iter] = FPCM(A,C,T,X,tol,maxiter,temp)
     end 
 end
 
-function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp,p)
+function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp)
 
     X = size(T,1);
     q = size(T,2);
@@ -37,20 +34,14 @@ function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp,p)
         
         if iter == 1
             C2 = ncon({T,T},{[1,2,-2],[1,2,-1]});
-            opts.v0 = reshape(C2,X^2,1);
-            opts.tol = 1e-2;
-            opts.p = p;
-            [C2,~] = eigs(@(x)mult1(T,T,x),X^2,1,'LM',opts);
+            C2 = leadingvec(T,T,C2,@mult1);
             C2 = reshape(C2,X,X);
 
             [U,s2,~] = svd(C2);
             C = U*sqrt(s2)*U';
             C = C./max(abs(C(:)));       
         else
-            opts.v0 = reshape(C1,X^2,1);
-            opts.tol = 1e-2;
-            opts.p = p;
-            [C,~] = eigs(@(x)mult1(T,Tl,x),X^2,1,'LM',opts);
+            C = leadingvec(T,Tl,C1,@mult1);
             C = reshape(C,X,X);
 
             [~,s,V] = svd(C);
@@ -75,6 +66,45 @@ function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp,p)
     if iter == maxiter
         disp(['LeftOrthonormalize not converged at T = ' num2str(temp)]);
     end
+end
+
+function y = leadingvec(A,B,C,func)
+    
+    n = numel(C);
+    m = 15;
+    V = zeros(n,m);
+    T = zeros(m,m);
+
+    v = reshape(C,n,1);
+    v = v/norm(v);
+    V(:,1) = v;
+    w_prime = func(A,B,V(:,1));
+    T(1,1) = w_prime'*V(:,1);
+    w = w_prime - T(1,1)*V(:,1);
+
+    for j = 2:m
+        T(j-1,j) = norm(w);
+        if T(j-1,j) == 0
+            disp('special case');
+        end
+        T(j,j-1) = T(j-1,j);
+        V(:,j) = w/T(j-1,j);
+        w_prime = func(A,B,V(:,j));
+        T(j,j) = w_prime'*V(:,j);
+        w = w_prime - T(j,j)*V(:,j) - T(j-1,j)*V(:,j-1);
+        for i = 1:j-1
+           w = w - w'*V(:,i)*V(:,i); 
+        end
+    end
+
+    Qtot = eye(m);
+    for i = 1:5
+        [Q,R] = qr(T);
+        Qtot = Qtot*Q;
+        T = R*Q;
+    end
+    
+    y = V*Qtot(:,1);
 end
 
 function y = mult1(M1,M2,C)

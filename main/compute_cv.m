@@ -1,44 +1,41 @@
-function [corr,iters,tictocs] = compute_corr(Q,q,X,tol,maxiter,ts,func,h)
+function [c,tictocs] = compute_cv(Q,q,X,tol,maxiter,ts,func,delta_b)
     
     emptylist = zeros(1,numel(ts));    
-    corr = emptylist;
-    iters = emptylist;
+    c = emptylist;
     tictocs = emptylist;
     
     delta_4D = zeros(q,q,q,q);for i=1:q; delta_4D(i,i,i,i)=1; end
-    
-    Qsq = sqrtm(Q(q,ts(1),h));
+    Qsq = sqrtm(Q(q,ts(1)-delta_b,0));
     A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
     [C,T] = beginmatrices(Qsq,A,X);
     
-    for t = 1:numel(ts)
-        
-        temp = ts(t);
-        Qsq = sqrtm(Q(q,temp,h));
-        A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
-        
+    for t = 1:numel(ts)        
         tic
-        [C,T,iter] = func(A,C,T,X,tol,maxiter,temp);
         
-        corr(t) = corrlen(T);
-        tictocs(t) = toc;
-        iters(t) = iter;      
+        b = 1/ts(t)-delta_b;
+        Qsq = sqrtm(Q(q,1/b,0));
+        A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
+        [C,T,~] = func(A,C,T,X,tol,maxiter,1/b);
+        k1 = compute_kappa(A,C,T);
+        
+        b = 1/ts(t);
+        Qsq = sqrtm(Q(q,1/b,0));
+        A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
+        [C,T,~] = func(A,C,T,X,tol,maxiter,1/b);
+        k2 = compute_kappa(A,C,T);
+        
+        b = 1/ts(t)+delta_b;
+        Qsq = sqrtm(Q(q,1/b,0));
+        A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
+        [C,T,~] = func(A,C,T,X,tol,maxiter,1/b);
+        k3 = compute_kappa(A,C,T);
+        
+        c(t) = ((log(k1)-2*log(k2)+log(k3))/delta_b^2)/ts(t)^2;
+
+        tictocs(t) = toc;     
     end
 end
-
-function y = corrlen(T)
-    X = size(T,1);
-    [~,vals] = eigs(@(x)mult1(T,T,x),X^2,2,'LM');
-    y = 1/abs(log(abs(vals(1,1))/abs(vals(2,2))));
-end
-
-function y = mult1(M1,M2,C)
-    si = size(M1);
-    C = reshape(C,si(1),si(1));
-    y = ncon({M1,M2,C},{[1,3,-2],[2,3,-1],[2,1]});
-    y = reshape(y,si(1)^2,1);
-end
-
+    
 function [C0,T0] = beginmatrices(Qsq,A,X)
     q = size(A,1);
     spin1_2D = zeros(q,q);spin1_2D(1,1) = 1;

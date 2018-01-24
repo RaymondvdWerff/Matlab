@@ -1,39 +1,50 @@
-%Testing CTM and FPCM with the Potts model.
+%Testing CTM and FPCM with the Potts/clock model.
 
 %Plot magnetization vs temperature.
-q = 2;
+q = 6;
 X = 20;
-tol1 = 3;
-tol2 = 1e-4;
+tol1 = 5;
+tol2 = 4;
 maxiter = 10000;
 
-t_begin = 0.8;
+t_begin = 0.4;
 t_step = 0.01;
-t_end = 1.2;
+t_end = 1.1;
+delta_t = 10^(-5);
+delta_h = 0;
 
 ts = t_begin:t_step:t_end;
 
-%for X = 10:10:50
-%    [m1,iters1,tictocs1] = compute_m(@Q_Potts,q,X,tol1,maxiter,ts,@FPCM);
-%    plot(ts,m1,'+-');hold on;
-%end
+%{
+for tol1 = 3:6
+    disp(['X = ' num2str(X)]);
+    [m1,~,~] = compute_m(@Q_clock,q,X,10^(-tol1),maxiter,ts,@FPCM,0);
+    plot(ts,m1,'+-');hold on;
+end
 
-[m1,iters1,tictocs1] = compute_m(@Q_Potts,q,X,10^(-tol1),maxiter,ts,@FPCM);
-save(['P_m_q' num2str(q) 'X' num2str(X) 'tol' num2str(tol1) '_FPCM'],'ts','m1','iters1','tictocs1');
-%[mx2,my2,iters2,tictocs2] = compute_m2(@Q_clock,q,X,tol2,maxiter,ts,@FPCM);
-%plot(ts,m1,'+-');hold on;
-%plot(ts,sqrt(mx2.^2+my2.^2),'x-');hold on;
+X = [1e-3,1e-4,1e-5,1e-6];
+%}
+
+[m1,iters1,tictocs1] = compute_m(@Q_clock,q,X,10^(-tol1),maxiter,ts,@FPCM,delta_h);
+%[m2,~,~] = compute_m(@Q_clock,q,X,10^(-tol1),maxiter,ts,@CTM,delta_h);
+
+%[m3,tictocs3] = compute_Xm(@Q_clock,q,X,10^(-tol1),maxiter,ts,@FPCM,delta_h);
+
+%save(['P_m_q' num2str(q) 'X' num2str(X) 'tol' num2str(tol1) '_FPCM'],'ts','m1','iters1','tictocs1');
+
+plot(ts,m1,'+-');hold on;
+%plot(ts,my1,'+-');hold on;
+%plot(ts,m3,'x-');hold on;
 
 %Exact solution Potts model:
-%m = m_exact(ts/2);
+%m = m_exact(ts);
 %plot(ts,m,'o-');
 
-%title(['Magnetization as a function of temperature for the ' num2str(q) '-state clock model']);
-%xlabel('temperature');
-%ylabel('magnatization');
-%legend(['X = ' num2str(X(1))],['X = ' num2str(X(2))],['X = ' num2str(X(3))],['X = ' num2str(X(4))],['X = ' num2str(X(5))])
-%legend(['tol = ' num2str(tols(1))],['tol = ' num2str(tols(2))])
-%legend('CTM','FPCM');
+title(['Magnetization as a function of temperature for the ' num2str(q) '-state clock model']);
+xlabel('temperature');
+ylabel('magnetization');
+%legend(['tol = ' num2str(X(1))],['tol = ' num2str(X(2))],['tol = ' num2str(X(3))],['tol = ' num2str(X(4))]);
+%legend('mx','my');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
@@ -121,7 +132,7 @@ q = 6;
 X = 20;
 %tc = 1/log(1+sqrt(2));
 %t = tc + 1e-3;
-temp = 0.9;
+temp = 0.7;
 maxiter1 = 4000;
 maxiter2 = 1000;
 tol = 1e-8;
@@ -162,8 +173,8 @@ xlabel('time (s)');
 ylabel('Magnetization');
 title(['Magnetization as a function of time for the ' num2str(q) '-state Potts model for X = ' num2str(X) ' at T = ' num2str(temp)]);
 legend('CTM','FPCM');
-%}
 
+%}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 %Determine the critical temperature for different bond dimensions.
