@@ -1,10 +1,16 @@
-function f = f_exact(t)
-      
-    f = -t*(log(2)/2 + integral(@(x)integrand(x,t),0,pi)/(2*pi))-1;
+function f = f_exact(ts)
+
+    f = zeros(numel(ts),1); 
+    
+    for t = 1:numel(ts)
         
+        temp = ts(t);
+        f(t) = -temp*(log(2)/2 + integral(@(x)integrand(x,temp),0,pi)/(2*pi));
+    
+    end    
 end
 
 function y = integrand(x,t)
-    k = sinh(1/t)^(-2);
-    y = log(cosh(1/t)^2 + sqrt(1+k^2-2*k*cos(2*x))/k);
+    k = sinh(2/t)^(-2);
+    y = log(cosh(2/t)^2 + sqrt(1+k^2-2*k*cos(2*x))/k);
 end

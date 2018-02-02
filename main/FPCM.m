@@ -11,7 +11,7 @@ function [C,T,iter] = FPCM(A,C,T,X,tol,maxiter,temp)
         opts.tol = 1e-2;
         opts.p = p;
         [T,~] = eigs(@(x)mult2(Tl,A,x),q*X^2,1,'LM',opts);
-        T = reshape(T,[X,q,X]);
+        T = real(T); T = reshape(T,[X,q,X]);
         T = T + permute(T,[3,2,1]);
 
         if iter > 1

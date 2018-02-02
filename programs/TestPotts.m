@@ -1,50 +1,92 @@
 %Testing CTM and FPCM with the Potts/clock model.
+%{
+%Compute Tc by divergence of correlation length
+datax = ts;
+datay = m1;
+
+begin = 180;
+ending = 224;
+dataxfit = reshape(datax(begin:ending),ending-begin+1,1);
+datayfit = reshape(datay(begin:ending),ending-begin+1,1);
+
+dataxshow = datax(begin):0.001:datax(ending);
+
+myfittype = fittype('a*exp(b*(abs(xc-x)/xc)^(-1/2))');
+myfittopts = fitoptions('Method','NonLinearLeastSquares','StartPoint',[0.1,2,0.7]);
+myfit = fit(dataxfit,datayfit,myfittype,myfittopts);
+coeff = coeffvalues(myfit);a=coeff(1);b=coeff(2);Tc=coeff(3);
+err_coeff = confint(myfit);err_Tc = err_coeff(5);
+
+a
+b
+Tc
+%abs(Tc-err_Tc)
+
+plot(ts,m1,'+-');hold on;
+plot(dataxshow,a*exp(b*(abs(Tc-dataxshow)/Tc).^(-1/2)),'x-');hold on;
+%axis([ts(1) ts(end) 0 50])
+legend('data','fit');
+%}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Plot magnetization vs temperature.
 q = 6;
 X = 20;
-tol1 = 5;
+tol1 = 6;
 tol2 = 4;
 maxiter = 10000;
 
-t_begin = 0.4;
-t_step = 0.01;
-t_end = 1.1;
-delta_t = 10^(-5);
+t_begin = 0.7;
+t_step = 0.0005;
+t_end = 0.98;
+%delta_t = 10^(-5);
 delta_h = 0;
+%delta_h = 10^(-8);
 
-ts = t_begin:t_step:t_end;
+%ts = t_begin:t_step:t_end;
+%ts1 = 0.6:0.001:0.7; ts2 = 0.71:0.01:0.92; ts3 = 0.93:0.001:1.03; ts = [ts1,ts2,ts3];
 
-%{
-for tol1 = 3:6
-    disp(['X = ' num2str(X)]);
-    [m1,~,~] = compute_m(@Q_clock,q,X,10^(-tol1),maxiter,ts,@FPCM,0);
-    plot(ts,m1,'+-');hold on;
-end
+% for tol1 = 4:6
+%     disp(['X = ' num2str(X)]);
+%     [m1,~] = compute_Xm(@Q_clock,q,X,10^(-tol1),maxiter,ts,@FPCM,delta_h);
+%     plot(ts,m1,'+-');hold on;
+% end
+% 
+% X = [1e-4,1e-5,1e-6];
 
-X = [1e-3,1e-4,1e-5,1e-6];
-%}
 
-[m1,iters1,tictocs1] = compute_m(@Q_clock,q,X,10^(-tol1),maxiter,ts,@FPCM,delta_h);
-%[m2,~,~] = compute_m(@Q_clock,q,X,10^(-tol1),maxiter,ts,@CTM,delta_h);
+%[mx1,my1,iters1,tictocs1] = compute_m2(@Q_clock,q,X,10^(-tol1),maxiter,ts,@CTM,delta_h);
+%[m2,iters2,tictocs2] = compute_f(@Q_clock,q,X,10^(-tol2),maxiter,ts,@FPCM,delta_h);
 
 %[m3,tictocs3] = compute_Xm(@Q_clock,q,X,10^(-tol1),maxiter,ts,@FPCM,delta_h);
 
-%save(['P_m_q' num2str(q) 'X' num2str(X) 'tol' num2str(tol1) '_FPCM'],'ts','m1','iters1','tictocs1');
+%save(['C_Xm_q' num2str(q) 'X' num2str(X) 'tol' num2str(tol1) '_FPCM_bla'],'ts','m1','iters1','tictocs1');
 
-plot(ts,m1,'+-');hold on;
-%plot(ts,my1,'+-');hold on;
-%plot(ts,m3,'x-');hold on;
+%plot(ts,mx1,'+-');hold on;
+%plot(ts,Xmx1,'+-');hold on;
+%plot(ts,Xmy1,'+-');hold on;
+
+subplot(2,2,1);
+plot(ts,mx1,'.');xlabel('T');ylabel('m_x');
+subplot(2,2,2);
+plot(ts,my1,'.');xlabel('T');ylabel('m_y');
+subplot(2,2,3);
+plot(ts,sqrt(mx1.^2+my1.^2),'.');xlabel('T');ylabel('|m|');
+subplot(2,2,4);
+plot3(mx1,my1,ts,'.');xlabel('m_x');ylabel('m_y');zlabel('T');
+
+%plot(ts,my1,'x-');hold on;
+%plot(ts,sqrt(mx1.^2+my1.^2),'o-');hold on;
 
 %Exact solution Potts model:
 %m = m_exact(ts);
-%plot(ts,m,'o-');
+%plot(ts,m,'+-');hold on;
 
-title(['Magnetization as a function of temperature for the ' num2str(q) '-state clock model']);
-xlabel('temperature');
-ylabel('magnetization');
-%legend(['tol = ' num2str(X(1))],['tol = ' num2str(X(2))],['tol = ' num2str(X(3))],['tol = ' num2str(X(4))]);
-%legend('mx','my');
+%title(['m as a function of temperature for the ' num2str(q) '-state clock model']);
+%xlabel('temperature');
+%ylabel('m');
+%legend(['tol = ' num2str(X(1))],['tol = ' num2str(X(2))],['tol = ' num2str(X(3))]);
+%legend('Xm','Xmx','Xmy');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
@@ -132,7 +174,7 @@ q = 6;
 X = 20;
 %tc = 1/log(1+sqrt(2));
 %t = tc + 1e-3;
-temp = 0.7;
+temp = 0.8;
 maxiter1 = 4000;
 maxiter2 = 1000;
 tol = 1e-8;
@@ -259,7 +301,7 @@ end
 %}
 
 %Determine the critical temperature for different bond dimensions using interp.
-format long
+%format long
 %{
 q = 2;
 X = [20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100];
