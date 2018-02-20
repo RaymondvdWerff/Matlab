@@ -1,4 +1,6 @@
-function [c,iters,tictocs] = compute_cv(Q,q,X,tol,maxiter,ts,func,delta_b)
+function [c,iters,tictocs] = compute_cv(Q,q,X,tol,maxiter,ts,func)
+    
+    delta_b = 1e-5;
     
     emptylist = zeros(1,numel(ts));    
     c = emptylist;

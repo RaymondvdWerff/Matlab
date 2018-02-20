@@ -47,6 +47,7 @@ function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp,p)
             C = U*sqrt(s2)*U';
             C = C./max(abs(C(:)));       
         else
+            C1 = real(C1);
             opts.v0 = reshape(C1,X^2,1);
             opts.tol = 1e-2;
             opts.p = p;

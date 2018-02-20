@@ -1,4 +1,4 @@
-function [Y,iters,tictocs] = compute_Y(Q,q,X,tol,maxiter,ts,func,h)
+function [Y,iters,tictocs] = compute_Y(Q,q,X,tol,maxiter,ts,func)
     
     emptylist = zeros(numel(ts),1);    
     Y = emptylist;
@@ -12,7 +12,7 @@ function [Y,iters,tictocs] = compute_Y(Q,q,X,tol,maxiter,ts,func,h)
         temp = ts(t);
         disp(['temp = ' num2str(temp)]);
         
-        Qsq = sqrtm(Q(q,temp,h));
+        Qsq = sqrtm(Q(q,temp,0));
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         [C1,T1] = beginmatrices1(Qsq,A,X);
         [C2,T2] = beginmatrices2(Qsq,A,X);

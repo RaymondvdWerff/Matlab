@@ -11,8 +11,8 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(Q,q,X,tol,maxiter
     Bx = ncon({spinx_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
     By = ncon({spiny_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         
-    [~,T] = beginmatrices(Qsq,A,X);
-    %T = rand(X,q,X); T = T + permute(T,[3,2,1]);
+    %[~,T] = beginmatrices(Qsq,A,X,1);
+    T = rand(X,q,X); T = T + permute(T,[3,2,1]);
     tictocs = [0];
     i = 1;
       
@@ -32,10 +32,10 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(Q,q,X,tol,maxiter
         env_half = ncon({C,C,T,T},{[-1,1],[2,3],[1,-3,2],[3,-4,-2]});
         env = ncon({env_half,env_half},{[1,2,-1,-2],[2,1,-3,-4]});
         Z = ncon({env,A},{[1,2,3,4],[1,2,3,4]});
-        mx = ncon({env,Bx},{[1,2,3,4],[1,2,3,4]})/Z;
+        %mx = ncon({env,Bx},{[1,2,3,4],[1,2,3,4]})/Z;
         my = ncon({env,By},{[1,2,3,4],[1,2,3,4]})/Z;
         
-        m(iter) = sqrt(mx^2+my^2);
+        m(iter) = my;
         %n = collapse(C,T,B)/collapse(C,T,A);
         %m(iter) = (q*n-1)/(q-1);
         
