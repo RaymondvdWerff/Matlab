@@ -1,4 +1,9 @@
-function [m,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(Q,q,X,tol,maxiter,temp,tols)
+function [m,sv,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(Q,q,X,tol,maxiter,temp,tols)
+    
+    m = zeros(1,maxiter);
+    sv = zeros(1,maxiter);
+    iters = 1:maxiter;
+    p = 12;
     
     delta_4D = zeros(q,q,q,q);for i=1:q; delta_4D(i,i,i,i)=1; end
     %spin1_4D = zeros(q,q,q,q);spin1_4D(1,1,1,1)=1;
@@ -11,18 +16,18 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(Q,q,X,tol,maxiter
     Bx = ncon({spinx_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
     By = ncon({spiny_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         
-    %[~,T] = beginmatrices(Qsq,A,X,1);
-    T = rand(X,q,X); T = T + permute(T,[3,2,1]);
+    [~,T] = beginmatrices(Qsq,A,X,1);
     tictocs = [0];
     i = 1;
       
     for iter = 1:maxiter
         tic;
-        [Tl,C] = LeftOrthonormalize(T,min(tol,1e-6),maxiter/10,temp);
+        [Tl,C] = LeftOrthonormalize(T,min(tol,1e-6),maxiter/10,temp,p);
         [~,s,~] = svd(C);s = s/max(s(:));
         
         opts.v0 = reshape(T,q*X^2,1);
         opts.tol = 1e-2;
+        opts.p = p;
         [T,~] = eigs(@(x)mult2(Tl,A,x),q*X^2,1,'LM',opts);
         T = reshape(T,[X,q,X]);
         T = T + permute(T,[3,2,1]);
@@ -32,15 +37,13 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(Q,q,X,tol,maxiter
         env_half = ncon({C,C,T,T},{[-1,1],[2,3],[1,-3,2],[3,-4,-2]});
         env = ncon({env_half,env_half},{[1,2,-1,-2],[2,1,-3,-4]});
         Z = ncon({env,A},{[1,2,3,4],[1,2,3,4]});
-        %mx = ncon({env,Bx},{[1,2,3,4],[1,2,3,4]})/Z;
+        mx = ncon({env,Bx},{[1,2,3,4],[1,2,3,4]})/Z;
         my = ncon({env,By},{[1,2,3,4],[1,2,3,4]})/Z;
         
-        m(iter) = my;
-        %n = collapse(C,T,B)/collapse(C,T,A);
-        %m(iter) = (q*n-1)/(q-1);
+        m(iter) = sqrt(mx^2+my^2);
         
         if iter > 1
-            %m(iter) = sum(sum(abs(s-sold)));
+            sv(iter) = sum(sum(abs(s-sold)));
             if i < numel(tols)+1
                 if sum(sum(abs(s-sold))) < tols(i)
                     imarkers(i) = iter;
@@ -48,20 +51,20 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(Q,q,X,tol,maxiter
                     i = i+1;
                 end
             end
-            if abs(m(iter)-m(iter-1)) < tol
-                break;
-            end
+%             if abs(m(iter)-m(iter-1)) < tol
+%                 break;
+%             end
         end
         sold = s;
     end
     
-    if iter == maxiter
-        disp('converge_m_FPCM not converged');
-    end 
-    iters = 1:iter;
+%     if iter == maxiter
+%         disp('converge_m_FPCM not converged');
+%     end 
+%     iters = 1:iter;
 end
 
-function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp)
+function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp,p)
 
     X = size(T,1);
     q = size(T,2);
@@ -71,6 +74,8 @@ function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp)
         if iter == 1
             C2 = ncon({T,T},{[1,2,-2],[1,2,-1]});
             opts.v0 = reshape(C2,X^2,1);
+            opts.tol = 1e-2;
+            opts.p = p;
             [C2,~] = eigs(@(x)mult1(T,T,x),X^2,1,'LM',opts);
             C2 = reshape(C2,X,X);
 
@@ -79,6 +84,8 @@ function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp)
             C = C./max(abs(C(:)));       
         else
             opts.v0 = reshape(C1,X^2,1);
+            opts.tol = 1e-2;
+            opts.p = p;
             [C,~] = eigs(@(x)mult1(T,Tl,x),X^2,1,'LM',opts);
             C = reshape(C,X,X);
 

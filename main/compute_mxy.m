@@ -1,4 +1,4 @@
-function [mx,my,iters,tictocs] = compute_mxy(Q,q,X,tol,maxiter,ts,func)
+function [mx,my,iters,tictocs] = compute_mxy(Q,q,X,tol,maxiter,ts,func,h)
     
     emptylist = zeros(1,numel(ts));    
     mx = emptylist;
@@ -19,12 +19,12 @@ function [mx,my,iters,tictocs] = compute_mxy(Q,q,X,tol,maxiter,ts,func)
         temp = ts(t);
         disp(['temp = ' num2str(temp)]);
         
-        Qsq = sqrtm(Q(q,temp,0));
+        Qsq = sqrtm(Q(q,temp,h));
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         Bx = ncon({spinx_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         By = ncon({spiny_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
-        %[C,T] = beginmatrices(Qsq,A,X,1);
-        C = rand(X);C = C+C'; T = rand(X,q,X); T = T + permute(T,[3,2,1]);
+        [C,T] = beginmatrices(Qsq,A,X,1);
+        %C = rand(X);C = C+C'; T = rand(X,q,X); T = T + permute(T,[3,2,1]);
         
         tic
         [C,T,iter] = func(A,C,T,X,tol,maxiter,temp);

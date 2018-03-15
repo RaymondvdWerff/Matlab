@@ -1,7 +1,7 @@
 function [C,T,iter] = CTM(A,C,T,X,tol,maxiter,temp)
 
     for iter = 1:maxiter
-
+        
         N = ncon({T,A},{[-1,1,-4],[1,-2,-3,-5]});
         M = ncon({C,T,N},{[1,2],[1,3,-1],[2,3,-2,-3,-4]});
         

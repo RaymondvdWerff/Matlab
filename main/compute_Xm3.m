@@ -26,8 +26,8 @@ function [Xm,iters,tictocs] = compute_Xm3(Q,q,X,tol,maxiter,ts,func)
         By = ncon({spiny_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         Bx2 = ncon({spinx2_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         By2 = ncon({spiny2_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
-        %[C,T] = beginmatrices(Qsq,A,X);
-        C = rand(X);C = C+C'; T = rand(X,q,X); T = T + permute(T,[3,2,1]);
+        [C,T] = beginmatrices(Qsq,A,X,1);
+        %C = rand(X);C = C+C'; T = rand(X,q,X); T = T + permute(T,[3,2,1]);
         
         tic
         [C,T,iter] = func(A,C,T,X,tol,maxiter,temp);

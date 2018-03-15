@@ -1,4 +1,8 @@
-function [m,iters,tictocs,imarkers,tmarkers] = converge_m_CTM(Q,q,X,tol,maxiter,temp,tols)
+function [m,sv,iters,tictocs,imarkers,tmarkers] = converge_m_CTM(Q,q,X,tol,maxiter,temp,tols)
+    
+    m = zeros(1,maxiter);
+    sv = zeros(1,maxiter);
+    iters = 1:maxiter;
     
     delta_4D = zeros(q,q,q,q);for i=1:q; delta_4D(i,i,i,i)=1; end
     %spin1_4D = zeros(q,q,q,q);spin1_4D(1,1,1,1)=1;
@@ -39,12 +43,9 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_CTM(Q,q,X,tol,maxiter,
         my = ncon({env,By},{[1,2,3,4],[1,2,3,4]})/Z;
         
         m(iter) = sqrt(mx^2+my^2);
-        %n = collapse(C,T,B)/collapse(C,T,A);
-        %m(iter) = (q*n-1)/(q-1);
-        
         
         if iter > 1
-            %m(iter) = sum(sum(abs(s-sold)));
+            sv(iter) = sum(sum(abs(s-sold)));
             if i < numel(tols)+1
                 if sum(sum(abs(s-sold))) < tols(i)
                     imarkers(i) = iter;
@@ -52,15 +53,15 @@ function [m,iters,tictocs,imarkers,tmarkers] = converge_m_CTM(Q,q,X,tol,maxiter,
                     i = i+1;
                 end
             end
-            if abs(m(iter)-m(iter-1)) < tol
-                break;
-            end
+%             if abs(m(iter)-m(iter-1)) < tol
+%                 break;
+%             end
         end
         sold = s;
     end
     
-    if iter == maxiter
-        disp('converge_m_CTM not converged');
-    end 
-    iters = 1:iter;
+%     if iter == maxiter
+%         disp('converge_m_CTM not converged');
+%     end 
+%     iters = 1:iter;
 end

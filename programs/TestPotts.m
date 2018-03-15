@@ -1,45 +1,114 @@
 %Testing CTM and FPCM with the Potts/clock model.
 %{
-%Plot magnetization vs temperature.
 q = 6;
-X = [21,22,23];
 tol1 = 6;
-%tol2 = 4;
-maxiter = 1000;
 
-t_begin = 0.7;
-t_step = 0.0001;
-t_end = 0.98;
+load('C_Tc2_q6X20-100tol6_FPCM_b');
+load(['C_corr2_q' num2str(q) 'X' num2str(X(1)) 'tol' num2str(tol1) '_FPCM']);
 
-ts = t_begin:t_step:t_end;
-%ts1 = 0.6:0.001:0.7; ts2 = 0.71:0.01:0.92; ts3 = 0.93:0.001:1.03; ts = [ts1,ts2,ts3];
+X = X(1:end);
+tcs = tcs(1:end);
+corrs = zeros(1,numel(X));
+index = 20;
+%index = 65;
+ts(index)
 
 for x = 1:numel(X)
-    disp(['X = ' num2str(X(x))]);
-    [mx1,my1,iters1,tictocs1] = compute_mxy(@Q_clock,q,X(x),10^(-tol1),maxiter,ts,@FPCM);
-    save(['C_mxy_q' num2str(q) 'X' num2str(X(x)) 'tol' num2str(tol1) '_FPCM'],'ts','mx1','my1','iters1','tictocs1');
-    %plot(ts,m1,'+-');hold on;
+   load(['C_corr2_q' num2str(q) 'X' num2str(X(x)) 'tol' num2str(tol1) '_FPCM']);
+   corrs(x) = corr1(index);
 end
+dataxfit = reshape(corrs,numel(corrs),1);
+datayfit = reshape(tcs,numel(tcs),1); 
 
-%X = 20:20:100;
+myfit = fit(dataxfit,datayfit,fittype('Tc+a/log(b*x)^2'),'StartPoint',[0.7,20,1000]);
+coeff = coeffvalues(myfit);Tc=coeff(1);a=coeff(2);b=coeff(3);
+err_coeff = confint(myfit);err_Tc = err_coeff(2);
 
-%[m1,iters1,tictocs1] = compute_S(@Q_clock,q,X,10^(-tol1),maxiter,ts,@FPCM);
-%[m2,iters2,tictocs2] = compute_f(@Q_clock,q,X,10^(-tol1),maxiter,ts,@FPCM);
+disp(['Tc from fit: ',num2str(Tc)]);
+disp(['Error from fit: ',num2str(abs(Tc-err_Tc))]);
 
-%save(['C_Xm_q' num2str(q) 'X' num2str(X) 'tol' num2str(tol1) '_FPCM_bla'],'ts','m1','iters1','tictocs1');
+dataxshow = dataxfit(1):0.01:dataxfit(end);
 
-%plot(ts,m1,'+-');hold on;
-%plot(ts,my1,'+-');hold on;
+plot(1./log(b*dataxfit).^2,datayfit,'o');hold on;
+plot(1./log(b*dataxshow).^2,Tc+a./log(b*dataxshow).^2);hold on;
+legend('data','fit');
+%}
 
-%Exact solution Potts model:
-%m = m_exact(ts);
-%plot(ts,m,'+-');hold on;
+%{
+for begin = 1:3
+    load('C_Tc1_q6X20-100tol6_FPCM_b');
+    load('C_corr_q6X20tol6_FPCM');
+    X = X(begin:end);
+    tcs = tcs(begin:end);
+
+    tcin = zeros(1,numel(ts));
+    tcout = zeros(1,numel(ts));
+
+    for index = 1:numel(ts)
+
+        corrs = zeros(1,numel(X));
+        for x = 1:numel(X)
+           load(['C_corr_q' num2str(q) 'X' num2str(X(x)) 'tol' num2str(tol1) '_FPCM']);
+           corrs(x) = corr1(index);
+        end
+
+        dataxfit = reshape(corrs,numel(corrs),1);
+        datayfit = reshape(tcs,numel(tcs),1); 
+
+        myfit = fit(dataxfit,datayfit,fittype('Tc+a/log(b*x)^2'),'StartPoint',[0.8,-20,1000]);
+        coeff = coeffvalues(myfit);Tc=coeff(1);a=coeff(2);b=coeff(3);
+        err_coeff = confint(myfit);err_Tc = err_coeff(2);
+
+        tcin(index) = ts(index);
+        tcout(index) = Tc;
+    end
+
+    plot(tcin,tcout,'.');hold on;
+end
+plot([ts(1),ts(end)],[ts(1),ts(end)]);
+%}
+
+
+%Plot OBSERVABLE vs temperature.
+q = 6;
+X = 20;
+tol1 = 6;
+tol2 = 6;
+maxiter = 5000;
+
+t_begin = 0.5;
+t_step = 0.01;
+t_end = 1;
+
+% t_begin = [0.971,0.963,0.957,0.954,0.954,0.949,0.947,0.947,0.944,0.944,0.943,0.943,0.942,0.94,0.94,0.939,0.938];
+% t_step = 0.0001;
+% t_end = [0.975,0.967,0.961,0.958,0.958,0.953,0.951,0.951,0.947,0.946,0.946,0.946,0.945,0.943,0.943,0.942,0.942];
+
+ts = t_begin:t_step:t_end;
+
+% for x = 1:numel(X)
+%     %disp(['X = ' , num2str(X(x))]);
+%     %ts = t_begin(x):t_step:t_end(x);
+%     %[mx1,my1,iters1,tictocs1] = compute_mxy(@Q_clock,q,X(x),10^(-tol1),maxiter,ts,@FPCM,1e-8);
+%     %save(['C_Tc2c_q' num2str(q) 'X' num2str(X(x)) 'tol' num2str(tol1) '_FPCM'],'ts','mx1','my1','iters1','tictocs1');
+%     load(['C_Tc2b_q' num2str(q) 'X' num2str(X(x)) 'tol' num2str(tol1) '_FPCM']);
+%     plot(ts,sqrt(mx1.^2+my1.^2),'.-');hold on;
+%     plot(ts(2:end),diff(sqrt(mx1.^2+my1.^2)),'.-');hold on;
+% end
+
+[Xm1,iters1,tictocs1] = compute_Xm3(@Q_clock,q,X,10^(-tol1),maxiter,ts,@FPCM);
+%[mx2,my2,iters2,tictocs2] = compute_mxy(@Q_clock,q,X,10^(-tol1),maxiter,ts,@FPCM,1e-8);
+
+%save(['C_m_q' num2str(q) 'X' num2str(X) 'tol' num2str(tol1) '_FPCM'],'ts','mx1','my1','mx2','my2','iters2','tictocs2');
+
+plot(ts,Xm1,'.-');hold on;
+%plot(ts,m2,'.-');hold on;
 
 %title(['Magnetization as a function of temperature for the ' num2str(q) '-state clock model (FPCM)']);
 %xlabel('temperature');
 %ylabel('magnetization');
 %legend(['X = ' num2str(X(1))],['X = ' num2str(X(2))],['X = ' num2str(X(3))],['X = ' num2str(X(4))],['X = ' num2str(X(5))]);
-%legend('X = 10','X = 20');
+%legend('CTM','FPCM');
 
 % subplot(2,2,1);
 % plot(ts,mx1,'.');xlabel('T');ylabel('m_x');
@@ -50,65 +119,74 @@ end
 % subplot(2,2,4);
 % plot3(mx1,my1,ts,'.');xlabel('m_x');ylabel('m_y');zlabel('T');
 
-subplot(1,3,1);
-plot(ts,mx1,'.');xlabel('T');ylabel('m_x');
-axis([0.7 1 -0.8 0.8]);
-subplot(1,3,2);
-plot(ts,my1,'.');xlabel('T');ylabel('m_y');
-subplot(1,3,3);
-plot(ts,sqrt(mx1.^2+my1.^2),'.');xlabel('T');ylabel('|m|');
+% subplot(1,3,1);
+% plot(ts,mx1,'.');xlabel('T');ylabel('m_x');
+% axis([0.7 1 -0.8 0.8]);
+% subplot(1,3,2);
+% plot(ts,my1,'.');xlabel('T');ylabel('m_y');
+% subplot(1,3,3);
+% plot(ts,sqrt(mx1.^2+my1.^2),'.');xlabel('T');ylabel('|m|');
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 %Plot iteratations vs bond dimension.
 q = 6;
-tol = 5;
-maxiter = 1000;
+tol = 6;
+maxiter = 50000;
 
 temp = 0.8;
 Qsq = sqrtm(Q_clock(q,temp,0));
 delta_4D = zeros(q,q,q,q);for i=1:q; delta_4D(i,i,i,i)=1; end    
 A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
 
-X = 10:2:100;
+X = 10:1:100;
 iters1 = zeros(1,numel(X));
 iters2 = zeros(1,numel(X));
 
 for x = 1:numel(X)
     disp(['X = ' num2str(X(x))]);
     [C,T] = beginmatrices(Qsq,A,X(x),1);
-    [~,~,iter1] = CTM(A,C,T,X(x),10^(-tol),maxiter,temp);
+    %c[~,~,iter1] = CTM(A,C,T,X(x),10^(-tol),maxiter,temp);
     [~,~,iter2] = FPCM(A,C,T,X(x),10^(-tol),maxiter,temp);
     iters1(x) = iter1;
     iters2(x) = iter2;
 end
 
-plot(X,iters1,'+-');hold on;
+%plot(X,iters1,'+-');hold on;
 plot(X,iters2,'x-');hold on;
 title(['Iterations as a function of bond dimension for the ' num2str(q) '-state clock model at T = ' num2str(temp)]);
 xlabel('bond dimension');
 ylabel('number of iterations');
-legend('CTM','FPCM');
+%legend('CTM','FPCM');
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 %Determine point of maximum slope of magnetization from fit
-datax = ts; datax = datax(1:500);
-datay = sqrt(mx1.^2+my1.^2); datay = datay(1:500);
+beginning = 14;
+ending = numel(ts)-103;
+datax = ts;datax = datax(beginning:1:ending);
+datay = m1; datay = datay(beginning:1:ending);
+dataxshow = datax(1):0.00001:datax(end);
 
-P = polyfit(datax,datay,60);
+P = polyfit(datax,datay,4);
 D = polyder(P);
 
-curve = polyval(D,datax);
-[val,index] = min(curve);
-ts(index)
+curve1 = polyval(P,dataxshow);
+curve2 = polyval(D,dataxshow);
+[val,index] = min(curve2);
+dataxshow(index)
 
-% plot(datax,datay,'.-');hold on;
-% plot(datax,polyval(P,datax),'.-');hold on;
+subplot(1,2,1);
+plot(datax,datay,'.-');hold on;
+plot(dataxshow,curve1,'-');hold on;
+plot(dataxshow(index),curve1(index),'o');
+legend('data','fit','steepest slope');
 
-plot(datax,polyval(D,datax),'.-');hold on;
-plot(ts(index),curve(index),'o');
-legend('fit','minimum');
+subplot(1,2,2);
+plot(datax(2:end)-(datax(2)-datax(1))/2,diff(datay)/(datax(2)-datax(1)),'.-');hold on;
+plot(dataxshow,curve2,'-');hold on;
+plot(dataxshow(index),curve2(index),'o');
+legend('data','fit','minimum');
 %}
 %{
 X = 20:5:100;
@@ -116,30 +194,34 @@ tcs = zeros(1,numel(X));
 
 for x = 1:numel(X)
     load(['C_Tc1_q6X', num2str(X(x)) ,'tol6_FPCM.mat']);
-    datax = ts;
-    datay = sqrt(mx1.^2+my1.^2);
+    ending = numel(ts)-25;
+    ts = ts(1:ending); mx1 = mx1(1:ending); my1 = my1(1:ending);
+    y = sqrt(mx1.^2+my1.^2);
+    datax = ts(1:10:end);
+    datay = y(1:10:end);
     
-    P = polyfit(datax,datay,6);
+    P = polyfit(datax,datay,4);
     D = polyder(P);
+    
+    %plot(datax,datay,'.-');hold on;
+    plot(ts(2:end),10000*diff(y),'.-');hold on;
+    plot(ts,polyval(D,ts),'.-');hold on;
 
-    % plot(datax,datay,'.-');hold on;
-    % plot(datax,polyval(P,datax),'.-');hold on;
-
-    curve = polyval(D,datax);
-    [val,index] = min(curve);
+    curve = polyval(D,ts);
+    [~,index] = min(curve);
     tcs(x) = ts(index);
 end
 
 %plot(1./log(X).^2,tcs,'o');hold on;
-dataxfit = 1./log(X(6:end)).^2;
-datayfit = tcs(6:end);
-dataxfit = reshape(dataxfit,numel(dataxfit),1);
-datayfit = reshape(datayfit,numel(datayfit),1);
-
-myfit = fit(dataxfit,datayfit,fittype('a*x+b'));
-coeff = coeffvalues(myfit);a=coeff(1);b=coeff(2);
-b
-plot(myfit,dataxfit,datayfit);hold on;
+% dataxfit = 1./log(X(1:end)).^2;
+% datayfit = tcs(1:end);
+% dataxfit = reshape(dataxfit,numel(dataxfit),1);
+% datayfit = reshape(datayfit,numel(datayfit),1);
+% 
+% myfit = fit(dataxfit,datayfit,fittype('a*x+b'));
+% coeff = coeffvalues(myfit);a=coeff(1);b=coeff(2);
+% b
+% plot(myfit,dataxfit,datayfit);hold on;
 
 % plot(datax(2:end),diff(datay)/(datax(2)-datax(1)),'.-');hold on;
 % plot(datax,polyval(D,datax),'.-');hold on;
@@ -201,23 +283,41 @@ legend('data','fit');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 %Determine magnetization as a function of iteration number/time
-q = 6;
+q = 2;
 X = 20;
 %tc = 1/log(1+sqrt(2));
 %t = tc + 1e-3;
-temp = 0.93;
-maxiter1 = 500;
-maxiter2 = 200;
+temp = 2/log(1+sqrt(2));
+maxiter1 = 50000;
+maxiter2 = 500;
 tol = 1e-6;
 tols = [1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-7,1e-8];
 
-for i = 1:10
-    [m1,iters1,tictocs1,imarkers1,tmarkers1] = converge_m_FPCM(@Q_clock,q,X,tol,maxiter1,temp,tols);
-    plot(tictocs1,m1,'.-');hold on;
-end
+% for i = 10:10:100
+%     [m1,iters1,tictocs1,imarkers1,tmarkers1] = converge_m_FPCM(@Q_clock,q,X,tol,maxiter1,temp,tols,i);
+%     plot(tictocs1(end),m1(end),'o');hold on;
+% end
 
-%[m1,iters1,tictocs1,imarkers1,tmarkers1] = converge_m_CTM(@Q_clock,q,X,tol,maxiter1,temp,tols);
-%[m2,iters2,tictocs2,imarkers2,tmarkers2] = converge_m_FPCM(@Q_clock,q,X,tol,maxiter2,temp,tols);
+[m1,sv1,iters1,tictocs1,imarkers1,tmarkers1] = converge_m_CTM(@Q_clock,q,X,tol,maxiter1,temp,tols);
+[m2,sv2,iters2,tictocs2,imarkers2,tmarkers2] = converge_m_FPCM(@Q_clock,q,X,tol,maxiter2,temp,tols);
+
+subplot(1,3,1);
+semilogy(tictocs1,m1,'.-');hold on;
+semilogy(tictocs2,m2,'.-');
+xlabel('time (s)');ylabel('magnetization');legend('CTM','FPCM');
+
+subplot(1,3,2);
+semilogy(tictocs1,abs(m1-m1(end)),'.-');hold on;
+semilogy(tictocs2,abs(m2-m2(end)),'.-');
+xlabel('time (s)');ylabel('difference of magnetization');legend('CTM','FPCM');
+
+subplot(1,3,3);
+semilogy(tictocs1(2:end),sv1(2:end),'.-');hold on;
+semilogy(tictocs2(2:end),sv2(2:end),'.-');
+xlabel('time (s)');ylabel('difference of sv spectrum');legend('CTM','FPCM');
+
+suptitle(['Convergence of the magnetization and singular value spectrum for the ' num2str(q) '-state Clock model for \chi = ' num2str(X) ' at T = ' num2str(temp)]);
+
 %{
 %As a function of iteration number.
 plot(iters1,m1,'b');hold on;
