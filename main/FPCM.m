@@ -4,7 +4,7 @@ function [C,T,iter] = FPCM(A,C,T,X,tol,maxiter,temp)
     p = 12;
     for iter = 1:maxiter
         
-        [Tl,C] = LeftOrthonormalize(T,tol,maxiter/10,temp,p);
+        [Tl,C] = LeftOrthonormalize(T,tol,ceil(maxiter/10),temp,p);
         [~,s,~] = svd(C);s = s/max(s(:));
         
         opts.v0 = reshape(T,q*X^2,1);
@@ -88,6 +88,6 @@ end
 function y = mult2(M1,M2,T)
     si = size(M1);
     T = reshape(T,[si(1),si(2),si(3)]);
-    y = ncon({T,M1,M2,M1},{[4,1,2],[2,3,-3],[3,5,1,-2],[4,5,-1]});
+    y = ncon({T,M1,M2,M1},{[4,2,1],[1,3,-3],[3,5,2,-2],[4,5,-1]});
     y = reshape(y,prod(si),1);
 end

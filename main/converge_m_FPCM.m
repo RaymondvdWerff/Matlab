@@ -10,7 +10,7 @@ function [m,sv,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(Q,q,X,tol,maxi
     spinx_4D = zeros(q,q,q,q);for i=1:q; spinx_4D(i,i,i,i)=sin(2*pi*(i-1)/q); end
     spiny_4D = zeros(q,q,q,q);for i=1:q; spiny_4D(i,i,i,i)=cos(2*pi*(i-1)/q); end
     
-    Qsq = sqrtm(Q(q,temp,0));
+    Qsq = sqrtm(Q(q,temp,0));Qsq = real(Qsq);
     A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
     %B = ncon({spin1_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
     Bx = ncon({spinx_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
@@ -22,7 +22,7 @@ function [m,sv,iters,tictocs,imarkers,tmarkers] = converge_m_FPCM(Q,q,X,tol,maxi
       
     for iter = 1:maxiter
         tic;
-        [Tl,C] = LeftOrthonormalize(T,min(tol,1e-6),maxiter/10,temp,p);
+        [Tl,C] = LeftOrthonormalize(T,tol,maxiter/10,temp,p);
         [~,s,~] = svd(C);s = s/max(s(:));
         
         opts.v0 = reshape(T,q*X^2,1);
@@ -123,6 +123,6 @@ end
 function y = mult2(M1,M2,T)
     si = size(M1);
     T = reshape(T,[si(1),si(2),si(3)]);
-    y = ncon({T,M1,M2,M1},{[4,1,2],[2,3,-3],[3,5,1,-2],[4,5,-1]});
+    y = ncon({T,M1,M2,M1},{[4,2,1],[1,3,-3],[3,5,2,-2],[4,5,-1]});
     y = reshape(y,prod(si),1);
 end

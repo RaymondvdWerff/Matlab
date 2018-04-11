@@ -9,7 +9,7 @@ function [m,sv,iters,tictocs,imarkers,tmarkers] = converge_m_CTM(Q,q,X,tol,maxit
     spinx_4D = zeros(q,q,q,q);for i=1:q; spinx_4D(i,i,i,i)=sin(2*pi*(i-1)/q); end
     spiny_4D = zeros(q,q,q,q);for i=1:q; spiny_4D(i,i,i,i)=cos(2*pi*(i-1)/q); end
     
-    Qsq = sqrtm(Q(q,temp,0));
+    Qsq = sqrtm(Q(q,temp,0));Qsq = real(Qsq);
     A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
     %B = ncon({spin1_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
     Bx = ncon({spinx_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
@@ -21,6 +21,7 @@ function [m,sv,iters,tictocs,imarkers,tmarkers] = converge_m_CTM(Q,q,X,tol,maxit
     tictocs = [0];
        
     for iter = 1:maxiter
+        
         tic
         
         N = ncon({T,A},{[-1,1,-4],[1,-2,-3,-5]});

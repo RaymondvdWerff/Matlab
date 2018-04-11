@@ -1,4 +1,4 @@
-function [Xm,iters,tictocs] = compute_Xm3(Q,q,X,tol,maxiter,ts,func)
+function [mx,my,mx2,my2,iters,tictocs] = compute_Xm3(Q,q,X,tol,maxiter,ts,func)
     
     emptylist = zeros(1,numel(ts));    
     Xm = emptylist;
@@ -35,12 +35,12 @@ function [Xm,iters,tictocs] = compute_Xm3(Q,q,X,tol,maxiter,ts,func)
         env_half = ncon({C,C,T,T},{[-1,1],[2,3],[1,-3,2],[3,-4,-2]});
         env = ncon({env_half,env_half},{[1,2,-1,-2],[2,1,-3,-4]});
         Z = ncon({env,A},{[1,2,3,4],[1,2,3,4]});
-        mx = ncon({env,Bx},{[1,2,3,4],[1,2,3,4]})/Z;
-        my = ncon({env,By},{[1,2,3,4],[1,2,3,4]})/Z;
-        mx2 = ncon({env,Bx2},{[1,2,3,4],[1,2,3,4]})/Z;
-        my2 = ncon({env,By2},{[1,2,3,4],[1,2,3,4]})/Z;
+        mx(t) = ncon({env,Bx},{[1,2,3,4],[1,2,3,4]})/Z;
+        my(t) = ncon({env,By},{[1,2,3,4],[1,2,3,4]})/Z;
+        mx2(t) = ncon({env,Bx2},{[1,2,3,4],[1,2,3,4]})/Z;
+        my2(t) = ncon({env,By2},{[1,2,3,4],[1,2,3,4]})/Z;
         
-        Xm(t) = (mx2+my2)/Z-(mx^2-my^2)/Z^2;
+        %Xm(t) = mx2+my2-mx^2-my^2;
         tictocs(t) = toc;
         iters(t) = iter;      
     end
