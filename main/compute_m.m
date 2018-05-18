@@ -22,7 +22,7 @@ function [mx,my,iters,tictocs] = compute_m(Q,q,X,tol,maxiter,ts,func,h)
         temp = ts(t);
         disp(['temp = ' num2str(temp)]);
         
-        Qsq = sqrtm(Q(q,temp,h));Qsq = real(Qsq);
+        Qsq = sqrtm(Q(q,temp,h));
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         %B = ncon({spin1_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         Bx = ncon({spinx_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});

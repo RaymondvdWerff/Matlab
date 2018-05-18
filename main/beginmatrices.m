@@ -7,7 +7,7 @@ function [C0,T0] = beginmatrices(Qsq,A,X,spin)
         tensor_3D = zeros(q,q,q);for i=1:q; tensor_3D(i,i,i)=1; end
     else
         %boundary is fixed to given spin state
-        tensor_2D = zeros(q,q);tensor_2D(spin) = 1;
+        tensor_2D = zeros(q,q);tensor_2D(spin,spin) = 1;
         tensor_3D = zeros(q,q,q);tensor_3D(spin,spin,spin)=1;
     end
     

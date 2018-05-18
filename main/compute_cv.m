@@ -1,6 +1,6 @@
-function [cv,iters,tictocs] = compute_cv(Q,q,X,tol,maxiter,ts,func)
+function [cv,iters,tictocs] = compute_cv2(Q,q,X,tol,maxiter,ts,func)
     
-    delta_b = 1e-5;
+    delta_t = 1e-5;
     
     emptylist = zeros(1,numel(ts));    
     cv = emptylist;
@@ -14,28 +14,28 @@ function [cv,iters,tictocs] = compute_cv(Q,q,X,tol,maxiter,ts,func)
         
         disp(['temp = ' num2str(ts(t))]);
         
-        b = 1/ts(t)-delta_b;
-        Qsq = sqrtm(Q(q,1/b,0));
+        temp = ts(t)-delta_t;
+        Qsq = sqrtm(Q(q,temp,0));
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         [C,T] = beginmatrices(Qsq,A,X,1);
-        [C,T,iter1] = func(A,C,T,X,tol,maxiter,1/b);
-        k1 = compute_kappa(A,C,T);
+        [C,T,iter1] = func(A,C,T,X,tol,maxiter,temp);
+        f1 = -temp*log(compute_kappa(A,C,T));
         
-        b = 1/ts(t);
-        Qsq = sqrtm(Q(q,1/b,0));
+        temp = ts(t);
+        Qsq = sqrtm(Q(q,temp,0));
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         [C,T] = beginmatrices(Qsq,A,X,1);
-        [C,T,iter2] = func(A,C,T,X,tol,maxiter,1/b);
-        k2 = compute_kappa(A,C,T);
+        [C,T,iter2] = func(A,C,T,X,tol,maxiter,temp);
+        f2 = -temp*log(compute_kappa(A,C,T));
         
-        b = 1/ts(t)+delta_b;
-        Qsq = sqrtm(Q(q,1/b,0));
+        temp = ts(t)+delta_t;
+        Qsq = sqrtm(Q(q,temp,0));
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
         [C,T] = beginmatrices(Qsq,A,X,1);
-        [C,T,iter3] = func(A,C,T,X,tol,maxiter,1/b);
-        k3 = compute_kappa(A,C,T);
+        [C,T,iter3] = func(A,C,T,X,tol,maxiter,temp);
+        f3 = -temp*log(compute_kappa(A,C,T));
         
-        cv(t) = ((log(k1)-2*log(k2)+log(k3))/delta_b^2)/ts(t)^2;
+        cv(t) = -ts(t)*(f1-2*f2+f3)/delta_t^2;
         iters(t) = iter1+iter2+iter3;
         tictocs(t) = toc;     
     end

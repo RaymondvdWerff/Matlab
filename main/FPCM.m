@@ -1,14 +1,16 @@
 function [C,T,iter] = FPCM(A,C,T,X,tol,maxiter,temp)
     
     q = size(A,1);
-    p = 12;
+    p = min(12,X^2);
+    tol2 = 1e-3;
+    
     for iter = 1:maxiter
         
-        [Tl,C] = LeftOrthonormalize(T,tol,ceil(maxiter/10),temp,p);
+        [Tl,C] = LeftOrthonormalize(T,min(tol,1e-6),ceil(maxiter/10),temp,p,tol2);
         [~,s,~] = svd(C);s = s/max(s(:));
         
         opts.v0 = reshape(T,q*X^2,1);
-        opts.tol = 1e-2;
+        opts.tol = tol2;
         opts.p = p;
         [T,~] = eigs(@(x)mult2(Tl,A,x),q*X^2,1,'LM',opts);
         T = real(T); T = reshape(T,[X,q,X]);
@@ -28,7 +30,7 @@ function [C,T,iter] = FPCM(A,C,T,X,tol,maxiter,temp)
     end 
 end
 
-function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp,p)
+function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp,p,tol2)
 
     X = size(T,1);
     q = size(T,2);
@@ -38,7 +40,7 @@ function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp,p)
         if iter == 1
             C2 = ncon({T,T},{[1,2,-2],[1,2,-1]});
             opts.v0 = reshape(C2,X^2,1);
-            opts.tol = 1e-2;
+            opts.tol = tol2;
             opts.p = p;
             [C2,~] = eigs(@(x)mult1(T,T,x),X^2,1,'LM',opts);
             C2 = reshape(C2,X,X);
@@ -49,7 +51,7 @@ function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp,p)
         else
             C1 = real(C1);
             opts.v0 = reshape(C1,X^2,1);
-            opts.tol = 1e-2;
+            opts.tol = tol2;
             opts.p = p;
             [C,~] = eigs(@(x)mult1(T,Tl,x),X^2,1,'LM',opts);
             C = reshape(C,X,X);
