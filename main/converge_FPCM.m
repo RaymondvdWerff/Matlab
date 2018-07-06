@@ -1,33 +1,59 @@
-function [C,T,iter] = FPCM(A,C,T,X,tol,maxiter,temp)
+function [f,m,sv,iter,tictocs] = converge_FPCM(Q,q,X,maxiter,temp)
     
-    q = size(A,1);
-    p = min(12,X^2);
+    f = zeros(1,maxiter);
+    m = zeros(1,maxiter);
+    sv = zeros(1,maxiter);
+    tictocs = zeros(1,maxiter);
+    
+    p = 12;
+    tol = 1e-6;
     tol2 = 1e-3;
     
+    delta_4D = zeros(q,q,q,q);for i=1:q; delta_4D(i,i,i,i)=1; end
+    spinx_4D = zeros(q,q,q,q);for i=1:q; spinx_4D(i,i,i,i)=sin(2*pi*(i-1)/q); end
+    spiny_4D = zeros(q,q,q,q);for i=1:q; spiny_4D(i,i,i,i)=cos(2*pi*(i-1)/q); end
+    
+    Qsq = sqrtm(Q(q,temp,0));Qsq = real(Qsq);
+    A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
+    Bx = ncon({spinx_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
+    By = ncon({spiny_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
+    [~,T] = beginmatrices(Qsq,A,X,1);
+      
     for iter = 1:maxiter
-        
-        [Tl,C] = LeftOrthonormalize(T,min(tol,1e-6),ceil(maxiter/10),temp,p,tol2);
+        tic;
+        [Tl,C] = LeftOrthonormalize(T,min(1e-6,tol),maxiter,temp,p,tol2);
         [~,s,~] = svd(C);s = s/max(s(:));
         
         opts.v0 = reshape(T,q*X^2,1);
         opts.tol = tol2;
         opts.p = p;
         [T,~] = eigs(@(x)mult2(Tl,A,x),q*X^2,1,'LM',opts);
-        T = real(T); T = reshape(T,[X,q,X]);
+        T = reshape(T,[X,q,X]);
         T = T + permute(T,[3,2,1]);
+        
+        if iter == 1
+            tictocs(iter) = toc;
+        else
+            tictocs(iter) = tictocs(iter-1) + toc;
+        end
+        
+        [k,M] = compute_kappa_m(A,Bx,By,C,T);
+        f(iter) = -temp*log(k);
+        m(iter) = M;
 
         if iter > 1
-            delta = sum(sum(abs(s-sold)));
-            if delta < tol
-                break;
+            sv(iter) = sum(sum(abs(s-sold)));
+        end
+        if iter > 1
+            if (abs(m(iter)-m(iter-1)) < 1e-12)
+                break
             end
-        end  
-        sold = s;       
+        end    
+        sold = s;
     end
-    
     if iter == maxiter
-        disp(['FPCM not converged at T = ' num2str(temp)]);
-    end 
+        disp('converge_FPCM not converged');
+    end
 end
 
 function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp,p,tol2)
@@ -43,18 +69,17 @@ function [Tl,C1] = LeftOrthonormalize(T,tol,maxiter,temp,p,tol2)
             opts.tol = tol2;
             opts.p = p;
             [C2,~] = eigs(@(x)mult1(T,T,x),X^2,1,'LM',opts);
-            C2 = real(C2);C2 = reshape(C2,X,X);
+            C2 = reshape(C2,X,X);
 
             [U,s2,~] = svd(C2);
             C = U*sqrt(s2)*U';
             C = C./max(abs(C(:)));       
         else
-            C1 = real(C1);
             opts.v0 = reshape(C1,X^2,1);
             opts.tol = tol2;
             opts.p = p;
             [C,~] = eigs(@(x)mult1(T,Tl,x),X^2,1,'LM',opts);
-            C = real(C);C = reshape(C,X,X);
+            C = reshape(C,X,X);
 
             [~,s,V] = svd(C);
             C = V*s*V';

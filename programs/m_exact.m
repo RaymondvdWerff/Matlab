@@ -1,11 +1,11 @@
 function y = m_exact(ts)
     
-    y = zeros(numel(ts),1);
+    y = zeros(1,numel(ts));
     
     for temp = 1:numel(ts)
         t = ts(temp);
-        if t < 1/log(1+sqrt(2))
-            y(temp) = (1-sinh(1/t)^(-4))^(1/8);
+        if t < 2/log(1+sqrt(2))
+            y(temp) = (1-sinh(2/t)^(-4))^(1/8);
         else
             y(temp) = 0;
         end

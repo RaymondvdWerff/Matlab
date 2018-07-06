@@ -1,25 +1,182 @@
 %Testing CTM and FPCM with the Potts/clock model.
+set(0,'DefaultTextFontname', 'CMU Serif')
+set(0,'DefaultAxesFontName', 'CMU Serif')
+set(0,'defaulttextinterpreter','latex')
 
+
+%{
+X = 10:80;
+mx2 = zeros(numel(X),numel(ts));
+my2 = zeros(numel(X),numel(ts));
+iters2 = zeros(numel(X),numel(ts));
+tictocs2 = zeros(numel(X),numel(ts));
+
+load('C_mxy_q5X10-80tol5_FPCMa.mat')
+for x = 1:numel(X)
+   mx2(5*x-4,:) = mxa(x,:);
+   my2(5*x-4,:) = mya(x,:);
+   iters2(5*x-4,:) = itersa(x,:);
+   tictocs2(5*x-4,:) = tictocsa(x,:);
+end
+load('C_mxy_q5X10-80tol5_FPCMb.mat')
+for x = 1:numel(X)
+   mx2(5*x-3,:) = mxb(x,:);
+   my2(5*x-3,:) = myb(x,:);
+   iters2(5*x-3,:) = itersb(x,:);
+   tictocs2(5*x-3,:) = tictocsb(x,:);
+end
+load('C_mxy_q5X10-80tol5_FPCMc.mat')
+for x = 1:numel(X)
+   mx2(5*x-2,:) = mxc(x,:);
+   my2(5*x-2,:) = myc(x,:);
+   iters2(5*x-2,:) = itersc(x,:);
+   tictocs2(5*x-2,:) = tictocsc(x,:);
+end
+load('C_mxy_q5X10-80tol5_FPCMd.mat')
+for x = 1:numel(X)
+   mx2(5*x-1,:) = mxd(x,:);
+   my2(5*x-1,:) = myd(x,:);
+   iters2(5*x-1,:) = itersd(x,:);
+   tictocs2(5*x-1,:) = tictocsd(x,:);
+end
+load('C_mxy_q5X10-80tol5_FPCMe.mat')
+for x = 1:numel(X)
+   mx2(5*x,:) = mxe(x,:);
+   my2(5*x,:) = mye(x,:);
+   iters2(5*x,:) = iterse(x,:);
+   tictocs2(5*x,:) = tictocse(x,:);
+end
+%}
+
+q = 5;
+temps = [0.4,0.93,1.4];
+maxiter1 = 2000;
+maxiter2 = 2000;
+tol = 1e-6; 
+X = 60;
+h = 0;
+legendinfo = cell(1,numel(temps));
+sv1 = zeros(numel(temps),X);
+%sv2 = zeros(numel(temps),X);
+
+for temp = 1:numel(temps)
+    delta_4D = zeros(q,q,q,q);for i=1:q; delta_4D(i,i,i,i)=1; end
+    Qsq = sqrtm(Q_clock(q,temps(temp),h));
+    A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
+
+    [C,T] = beginmatrices(Qsq,A,X,1);
+    [C1,~,~] = CTM(A,C,T,X,tol,maxiter1,temps(temp));
+    %[C2,~,~] = FPCM(A,C,T,X,tol,maxiter2,temps(temp));
+    
+    [~,s,~] = svd(C1); s = diag(s); sv1(temp,:) = s/max(s);
+    %[~,s,~] = svd(C2); s = diag(s); sv2(temp,:) = s/max(s);
+    semilogy(1:X,sv1(temp,:),'o-');hold on;
+    %semilogy(1:X,sv2(temp,:),'x-');hold on;
+    legendinfo{temp} = ['T = ',num2str(temps(temp))];
+end
+set(gca,'fontsize',15)
+legend(legendinfo);
+xlabel('$k$','fontsize',25);
+ylabel('$s_{k}$','fontsize',25);
+%}
+
+%{
+ts2 = ts(1):(ts(2)-ts(1))/10:ts(end);
+m0 = m_exact(ts2);
+
+subplot(1,2,1);
+for x = 1:numel(X)
+    plot(ts,sqrt(mx_CTM(x,:).^2+my_CTM(x,:).^2),'-','LineWidth',2);hold on;
+end
+plot(ts2,m0,'k','LineWidth',1);hold on;
+set(gca,'fontsize',15)
+legend('\chi = 10','\chi = 20','\chi = 30','\chi = 40','\chi = 50','\chi = 60','exact');
+xlabel('$T$','fontsize',25);
+ylabel('$m$','fontsize',25);
+title('\textbf{CTMRG}');
+ylim([0,0.6]);
+
+subplot(1,2,2);
+for x = 1:numel(X)
+    plot(ts,sqrt(mx_FPCM(x,:).^2+my_FPCM(x,:).^2),'-','LineWidth',2);hold on;
+end
+plot(ts2,m0,'k','LineWidth',1);hold on;
+set(gca,'fontsize',15)
+legend('\chi = 10','\chi = 20','\chi = 30','\chi = 40','\chi = 50','\chi = 60','exact');
+xlabel('$T$','fontsize',25);
+ylabel('$m$','fontsize',25);
+title('\textbf{FPCM}');
+ylim([0,0.6]);
+%}
+%{
+%X = 20:5:100;
+%tcs = [0.66114,0.66296,0.66451,0.66590,0.66663,0.66733,0.66857,0.66917,0.67023,0.67048,0.67146,0.67205,0.67229,0.67289,0.67299,0.67346,0.67384];
+
+xdata = X; xdata = reshape(xdata,numel(xdata),1);
+ydata = tcs; ydata = reshape(ydata,numel(ydata),1);
+
+myfit = fit(xdata,ydata,fittype('a+b/log(c*x)^2'),'StartPoint',[0.7,-0.25,30]);
+coeff = coeffvalues(myfit);Tc=coeff(1);a=coeff(2);b=coeff(3);
+err_coeff = confint(myfit);err_Tc = err_coeff(2);
+
+disp(['Tc from fit: ',num2str(Tc)]);
+disp(['Error from fit: ',num2str(abs(Tc-err_Tc))]);
+
+l = 1./log(b*xdata).^2;
+xdatashow = l(1):(l(2)-l(1))/100:l(end);
+
+plot(l,ydata,'o');hold on;
+plot(xdatashow,Tc+a*xdatashow,'-');hold on;
+%}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 %Plot OBSERVABLE vs temperature.
 q = 6;
-X = 3;
-tol1 = 1e-6;
-tol2 = 1e-3;
-maxiter1 = 5000;
+X = 20;
+tol1 = 1e-8;
+tol2 = 1e-4;
+maxiter1 = 50000;
 maxiter2 = 2000;
 
-t_begin = 0.5;
-t_step = 0.001;
-t_end = 1.6;
+t_begin = 0.01;
+t_step = 0.01;
+t_end = 1.2;
 
 ts = t_begin:t_step:t_end;
 
-%[mx1,my1,iters1,tictocs1] = compute_m(@Q_clock,q,X,tol1,maxiter1,ts,@FPCM,0);
-[m2,corr2,iters2,tictocs2] = compute_m_and_corr(@Q_clock,q,X,tol2,maxiter2,ts,@FPCM,0); 
+% [mx3,my3,iters3,tictocs3] = compute_m(@Q_clock,q,X,tol2,maxiter2,ts,@FPCM,0);
+% [E2,iters2,tictocs2] = compute_E2(@Q_clock,q,X,tol2,maxiter2,ts,@FPCM,0);
 
-plot(ts,corr2,'-');
-%legend('CTM','FPCM');
+plot(ts,my3,'o-');hold on;
+plot(ts(2:end),diff(E1)/max(diff(E1)),'x-');hold on;
+plot(ts(2:end),diff(E2)/max(diff(E2)),'+-');hold on;
+%subplot(3,1,1);
+% semilogy(ts,abs(m0-m1(8,:)),'LineWidth',2);hold on;
+% semilogy(ts,abs(m0-m2(4,:)),'LineWidth',1.5);hold on;
+% legend('CTMRG','FPCM');
+set(gca,'fontsize',15);
+xlabel('$T$','fontsize',25);
+ylabel('$E$','fontsize',25);
+% xlim([ts(1),ts(end)]);
+
+% %subplot(3,1,2);
+% semilogy(ts,abs(f0-f1(8,:)),'LineWidth',2);hold on;
+% semilogy(ts,abs(f0-f2(4,:)),'LineWidth',1.5);hold on;
+% legend('CTMRG','FPCM');
+% set(gca,'fontsize',15);
+% xlabel('$T$','fontsize',25);
+% ylabel('$\delta f$','fontsize',25);
+% xlim([ts(1),ts(end)]);
+% 
+% %subplot(3,1,3);
+% semilogy(ts,tictocs1(8,:),'LineWidth',2);hold on;
+% semilogy(ts,tictocs2(4,:),'LineWidth',1.5);hold on;
+% legend('CTMRG','FPCM');
+% set(gca,'fontsize',15);
+% xlabel('$T$','fontsize',25);
+% ylabel('Time (s)','fontsize',25);
+% xlim([ts(1),ts(end)]);
+
 %suptitle(['Magnetization of the ',num2str(q),'-state Clock model for \chi = ',num2str(X)]);
 
 % mx = zeros(numel(X),numel(tol2),numel(ts));
@@ -84,13 +241,16 @@ plot(ts,corr2,'-');
 %save(['C_m_q' num2str(q) 'X' num2str(X) 'tol' num2str(tol1) '_FPCM'],'ts','mx1','my1','mx2','my2','iters2','tictocs2');
 
 % subplot(2,2,1);
-% plot(ts,mx1,'.');xlabel('T');ylabel('m_x');
+% plot(ts,my2,'b.');set(gca,'fontsize',15);xlabel('$T$');ylabel('$m_x$');
+% xlim([ts(1),ts(end)]);
 % subplot(2,2,2);
-% plot(ts,my1,'.');xlabel('T');ylabel('m_y');
+% plot(ts,my2,'b.');set(gca,'fontsize',15);xlabel('$T$');ylabel('$m_y$');
+% xlim([ts(1),ts(end)]);
 % subplot(2,2,3);
-% plot(ts,sqrt(mx1.^2+my1.^2),'.');xlabel('T');ylabel('|m|');
+% plot(ts,sqrt(mx2.^2+my2.^2),'b.');set(gca,'fontsize',15);xlabel('$T$');ylabel('$|\vec{m}|$');
+% xlim([ts(1),ts(end)]);
 % subplot(2,2,4);
-% plot3(mx1,my1,ts,'.');xlabel('m_x');ylabel('m_y');zlabel('T');
+% plot(mx2,my2,'b.');xlabel('$m_x$');set(gca,'fontsize',15);ylabel('$m_y$');zlabel('$T$');
 
 % subplot(1,3,1);
 % plot(ts,mx2,'.-');xlabel('T');ylabel('m_x');
@@ -102,19 +262,163 @@ plot(ts,corr2,'-');
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
-%Determine magnetization as a function of iteration number/time
+%Determine convergence of free energy and magnetization
 q = 2;
-X = 600;
+X = 60;
+maxiter1 = 30000;
+maxiter2 = 2000;
+
+% temp = (1+0.01)*2/log(1+sqrt(2));
+% f0 = f_exact(temp);
+% m0 = m_exact(temp);
+
+% temp = 0.97;
+temp1 = (1+1)*2/log(1+sqrt(2));
+temp2 = (1+0.1)*2/log(1+sqrt(2));
+temp3 = (1+0.001)*2/log(1+sqrt(2));
+temps = [temp1,temp2,temp3];
+f0 = 0;
+m0 = 0;
+
+f1 = zeros(numel(temps),maxiter1);
+m1 = zeros(numel(temps),maxiter1);
+sv1 = zeros(numel(temps),maxiter1);
+iters1 = zeros(numel(temps),1);
+tictocs1 = zeros(numel(temps),maxiter1);
+
+f2 = zeros(numel(temps),maxiter2);
+m2 = zeros(numel(temps),maxiter2);
+sv2 = zeros(numel(temps),maxiter2);
+iters2 = zeros(numel(temps),1);
+tictocs2 = zeros(numel(temps),maxiter2);
+
+for temp = 1:numel(temps)
+    disp(['X = ',num2str(temps(temp))]);
+    
+    [f,m,sv,iter,tictocs] = converge_CTM(@Q_clock,q,X,maxiter1,temps(temp));
+    f1(temp,:) = f;
+    m1(temp,:) = m;
+    sv1(temp,:) = sv;
+    iters1(temp) = iter;
+    tictocs1(temp,:) = tictocs;
+    
+    [f,m,sv,iter,tictocs] = converge_FPCM(@Q_clock,q,X,maxiter2,temps(temp));
+    f2(temp,:) = f;
+    m2(temp,:) = m;
+    sv2(temp,:) = sv;
+    iters2(temp) = iter;
+    tictocs2(temp,:) = tictocs;
+end
+
+col=hsv(2);
+hand = zeros(1,2);
+%legendInfo = cell(1,numel(temps));
+
+for temp = 1:numel(temps)
+    subplot(1,3,temp);
+    hand(1) = semilogy(tictocs1(temp,1:iters1(temp)),abs(m1(temp,1:iters1(temp))-m0),'LineWidth',2,'Color',col(1,:));hold on;
+    semilogy(tictocs1(temp,iters1(temp)),abs(m1(temp,iters1(temp))-m0),'*','Color',col(1,:));hold on;
+    hand(2) = semilogy(tictocs2(temp,1:iters2(temp)),abs(m2(temp,1:iters2(temp))-m0),'LineWidth',2,'Color',col(2,:));hold on;
+    semilogy(tictocs2(temp,iters2(temp)),abs(m2(temp,iters2(temp))-m0),'*','Color',col(2,:));hold on;
+%     legendInfo{temp} = ['T = ' num2str(temps(temp))];
+    set(gca,'fontsize',15);
+    legend(hand,'CTMRG','FPCM');
+    xlabel('Time (s)','fontsize',25);
+    ylabel('Error in magnetization','fontsize',25);
+    title(['T = ',num2str(temps(temp))]);
+end
+
+
+% subplot(1,2,2);
+% for temp = 1:numel(temps)
+%     hand(temp) = semilogy(tictocs2(temp,1:iters2(temp)),abs(m2(temp,1:iters2(temp))-m0),'LineWidth',2,'Color',col(temp,:));hold on;    
+%     semilogy(tictocs2(temp,iters2(temp)),abs(m2(temp,iters2(temp))-m0),'*','Color',col(temp,:));hold on;
+%     legendInfo{temp} = ['T = ' num2str(temps(temp))];
+% end
+% set(gca,'fontsize',15);
+% legend(hand,legendInfo);
+% xlabel('Time (s)','fontsize',25);
+% ylabel('Error in magnetization','fontsize',25);
+% title('FPCM');
+%}
+
+%{
+%Determine convergence of free energy and magnetization for different T
+q = 2;
+X = 20;
+maxiter1 = 20000;
+maxiter2 = 2000;
+
+temp1 = (1+1)*2/log(1+sqrt(2));
+temp2 = (1+0.1)*2/log(1+sqrt(2));
+temp3 = (1+0.01)*2/log(1+sqrt(2));
+temp4 = (1+0.001)*2/log(1+sqrt(2));
+temps = [temp1,temp2,temp3,temp4];
+% 
+% f1 = zeros(numel(temps),maxiter1);
+% m1 = zeros(numel(temps),maxiter1);
+% sv1 = zeros(numel(temps),maxiter1);
+% iters1 = zeros(numel(temps),1);
+% tictocs1 = zeros(numel(temps),maxiter1);
+% 
+% f2 = zeros(numel(temps),maxiter2);
+% m2 = zeros(numel(temps),maxiter2);
+% sv2 = zeros(numel(temps),maxiter2);
+% iters2 = zeros(numel(temps),1);
+% tictocs2 = zeros(numel(temps),maxiter2);
+% 
+% for x = 1:numel(temps)
+%     disp(['temp = ',num2str(temps(x))]);
+%     
+%     [f,m,sv,iter,tictocs] = converge_CTM(@Q_clock,q,X,maxiter1,temps(x));
+%     f1(x,:) = f;
+%     m1(x,:) = m;
+%     sv1(x,:) = sv;
+%     iters1(x) = iter;
+%     tictocs1(x,:) = tictocs;
+%     
+%     [f,m,sv,iter,tictocs] = converge_FPCM(@Q_clock,q,X,maxiter2,temps(x));
+%     f2(x,:) = f;
+%     m2(x,:) = m;
+%     sv2(x,:) = sv;
+%     iters2(x) = iter;
+%     tictocs2(x,:) = tictocs;
+% end
+
+for x = 1:numel(temps)
+    col=hsv(2);
+    hand = zeros(1,numel(X));
+    m0 = f_exact(temps(x));
+    
+    subplot(1,4,x);
+    hand(1) = semilogy(tictocs1(x,1:iters1(x)),abs(f1(x,1:iters1(x))-m0),'LineWidth',2,'Color',col(1,:));hold on;
+    semilogy(tictocs1(x,iters1(x)),abs(f1(x,iters1(x))-m0),'*','Color',col(1,:));hold on;
+    hand(2) = semilogy(tictocs2(x,1:iters2(x)),abs(f2(x,1:iters2(x))-m0),'LineWidth',2,'Color',col(2,:));hold on;
+    semilogy(tictocs2(x,iters2(x)),abs(f2(x,iters2(x))-m0),'*','Color',col(2,:));hold on;
+
+    xlabel('Time (s)');
+    ylabel('Error in magnetization');
+    legend(hand,'CTMRG','FPCM');
+    title(['T = ',num2str(temps(x))]);
+end
+%suptitle(['Convergence behavior of the Ising model at T = ',num2str(temp)]);
+
+%}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%{
+%Determine magnetization as a function of iteration number/time
+q = 6;
+X = 20;
 %tc = 1/log(1+sqrt(2));
 %t = tc + 1e-3;
 %temp = (1+0.001)*2/log(1+sqrt(2));
 %temp = (1+0.0001)*2/log(1+sqrt(2));
+temp = 1;
 
-%temp = 0.825;
 for i = 1:numel(temp)
     disp(['i = ',num2str(i)]);
-    maxiter1 = 30000;
-    maxiter2 = 600;
+    maxiter1 = 10000;
+    maxiter2 = 400;
     tol1 = 1e-6;
     tol2 = 1e-6;
     tols = [1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-7,1e-8];
@@ -124,8 +428,8 @@ for i = 1:numel(temp)
     %     plot(tictocs1(end),m1(end),'o');hold on;
     % end
 
-    %[m1,sv1,iters1,tictocs1,imarkers1,tmarkers1] = converge_m_CTM(@Q_clock,q,X,tol1,maxiter1,temp(i),tols);
-    %[m2,sv2,iters2,tictocs2,imarkers2,tmarkers2] = converge_m_FPCM(@Q_clock,q,X,tol2,maxiter2,temp(i),tols);
+    [m1,sv1,iters1,tictocs1,imarkers1,tmarkers1] = converge_m_CTM(@Q_clock,q,X,tol1,maxiter1,temp(i),tols);
+    [m2,sv2,iters2,tictocs2,imarkers2,tmarkers2] = converge_m_FPCM(@Q_clock,q,X,tol2,maxiter2,temp(i),tols);
     %[m3,sv3,iters3,tictocs3,imarkers3,tmarkers3] = converge_m_CTM(@Q_clock,q,X,tol,maxiter1,temp2,tols);
     %[m4,sv4,iters4,tictocs4,imarkers4,tmarkers4] = converge_m_FPCM(@Q_clock,q,X,tol,maxiter2,temp2,tols);
 
@@ -141,21 +445,21 @@ for i = 1:numel(temp)
     % xlabel('time (s)');ylabel('magnetization');legend('CTM','FPCM');
     % title('T/Tc-1 = 0.0001');
 
-%     subplot(2,1,1);
-%     semilogy(tictocs1,m1,'.-');hold on;
-%     semilogy(tictocs2,m2,'.-');
-%     xlabel('time (s)');ylabel('magnetization');legend('CTM','FPCM');
-%     
+    subplot(2,1,1);
+    semilogy(tictocs1,m1,'.-');hold on;
+    semilogy(tictocs2,m2,'.-');
+    xlabel('time (s)');ylabel('magnetization');legend('CTM','FPCM');
+    
     % subplot(1,3,2);
     % semilogy(tictocs1,abs(m1-m1(end)),'.-');hold on;
     % semilogy(tictocs2,abs(m2-m2(end)),'.-');
     % xlabel('time (s)');ylabel('difference of magnetization');legend('CTM','FPCM');
     % 
-    %subplot(2,3,i);
-    semilogy(tictocs1/3600,m1,'.-');hold on;
-    semilogy(tictocs2/3600,m2,'.-');hold on;
-    title(['temp = (1+0.001)*Tc = ',num2str(temp(i))]);
-    xlabel('time (h)');ylabel('error of magnetization');legend('CTM','FPCM');
+    subplot(2,1,2);
+    semilogy(tictocs1,sv1,'.-');hold on;
+    semilogy(tictocs2,sv2,'.-');hold on;
+    title(['temp = ',num2str(temp(i))]);
+    xlabel('time (s)');ylabel('sv spectrum');legend('CTM','FPCM');
 end
 %suptitle(['Convergence of the magnetization and singular value spectrum for the ' num2str(q) '-state Clock model for \chi = ' num2str(X)]);
 
@@ -197,28 +501,48 @@ legend('CTM','FPCM');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 %Determination of critical temperature from fitting data
-q = 6;
-tol1 = 6;
 
-load('C_Tc2_q6X20-100tol6_FPCM_b');
-load(['C_corr2_q' num2str(q) 'X' num2str(X(1)) 'tol' num2str(tol1) '_FPCM']);
+load('C_Tc2_q6X20-100tol6_FPCM_a');X2 = X;
+load('C_mxy_corr_q6X20-100tol6_FPCM');X1 = X;
 
-X = X(1:end);
-tcs = tcs(1:end);
-corrs = zeros(1,numel(X));
+tcs1 = zeros(1,numel(X1));
+corrs = zeros(1,numel(X1)+numel(X2));
+for x = 1:numel(X1)
+    [~,index] = min(diff(sqrt(mx2(x,:).^2+my2(x,:).^2)));
+    tcs1(x) = ts(index);
+end
+tcs = [tcs1,tcs];
+
+load('C_corr_q6X20-100tol6_FPCM_r');
 index = 1;
-%index = 65;
 ts(index)
 
-for x = 1:numel(X)
-    load(['C_corr2_q' num2str(q) 'X' num2str(X(x)) 'tol' num2str(tol1) '_FPCM']);
-    corrs(x) = corr1(index);
+for x = 1:4:numel(X)
+    corrs(x/4+3/4) = 1/ys(x,index);
 end
+for x = 1:5:numel(X)
+    corrs(numel(X1)+x/5+4/5) = 1/ys(x,index);
+end
+
+% load('C_Tc2_q6X20-100tol6_FPCM_b');
+% load(['C_corr2_q6X' num2str(X(1)) 'tol6_FPCM']);
+% 
+% % X = X(1:end);
+% % tcs = tcs(1:end);
+% corrs = zeros(1,numel(X));
+% index = 1;
+% %index = 65;
+% ts(index)
+% 
+% for x = 1:numel(X)
+%     load(['C_corr2_q6X' num2str(X(x)) 'tol6_FPCM']);
+%     corrs(x) = corr1(index);
+% end
 
 dataxfit = reshape(corrs,numel(corrs),1);
 datayfit = reshape(tcs,numel(tcs),1); 
 
-myfit = fit(dataxfit,datayfit,fittype('Tc+a/log(b*x)^2'),'StartPoint',[0.7,-20,1000]);
+myfit = fit(dataxfit,datayfit,fittype('Tc+a/log(b*x)^2'),'StartPoint',[0.9,-20,1000]);
 coeff = coeffvalues(myfit);Tc=coeff(1);a=coeff(2);b=coeff(3);
 err_coeff = confint(myfit);err_Tc = err_coeff(2);
 
@@ -233,27 +557,27 @@ legend('data','fit');
 %}
 
 %{
-for begin = 1:3
-    load('C_Tc1_q6X20-100tol6_FPCM_b');
-    load('C_corr_q6X20tol6_FPCM');
-    X = X(begin:end);
-    tcs = tcs(begin:end);
+for begin = 1:5
+    load('C_Tc2_q6X20-100tol6_FPCM_b');
+    load('C_corr2_q6X20tol6_FPCM');
+    X1 = X(begin:end);
+    tcs1 = tcs(begin:end);
 
     tcin = zeros(1,numel(ts));
     tcout = zeros(1,numel(ts));
 
     for index = 1:numel(ts)
 
-        corrs = zeros(1,numel(X));
-        for x = 1:numel(X)
-           load(['C_corr_q' num2str(q) 'X' num2str(X(x)) 'tol' num2str(tol1) '_FPCM']);
+        corrs = zeros(1,numel(X1));
+        for x = 1:numel(X1)
+           load(['C_corr2_q' num2str(q) 'X' num2str(X1(x)) 'tol' num2str(tol1) '_FPCM']);
            corrs(x) = corr1(index);
         end
 
         dataxfit = reshape(corrs,numel(corrs),1);
-        datayfit = reshape(tcs,numel(tcs),1); 
+        datayfit = reshape(tcs1,numel(tcs1),1); 
 
-        myfit = fit(dataxfit,datayfit,fittype('Tc+a/log(b*x)^2'),'StartPoint',[0.8,-20,1000]);
+        myfit = fit(dataxfit,datayfit,fittype('Tc+a/log(b*x)^2'),'StartPoint',[0.9,20,1000]);
         coeff = coeffvalues(myfit);Tc=coeff(1);a=coeff(2);b=coeff(3);
         err_coeff = confint(myfit);err_Tc = err_coeff(2);
 
@@ -301,31 +625,80 @@ ylabel('number of iterations');
 %}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
-%Determine point of maximum slope of magnetization from fit
+% %Determine point of maximum slope of magnetization from fit
+% tcs = zeros(1,21);
+% load('C_mxy_corr_q2X20-100tol8_CTMa');
+% for x = 1:numel(X)
+%     mx1 = mx1a(x,:);
+%     my1 = my1a(x,:);
+% 
+%     [~,index1] = min(diff(sqrt(mx1.^2+my1.^2)));
+%     beginning = max(1,index1-5);
+%     ending = min(numel(ts),index1+6);
+%     datax = ts;datax = datax(beginning:1:ending);
+%     datay = sqrt(mx1.^2+my1.^2); datay = datay(beginning:1:ending);
+%     dataxshow = datax(1):(datax(2)-datax(1))/10:datax(end);
+% 
+%     P = polyfit(datax,datay,7);
+%     D = polyder(P);
+% 
+%     curve1 = polyval(P,dataxshow);
+%     curve2 = polyval(D,dataxshow);
+%     [val,index] = min(curve2);
+%     tcs(2*x-1) = dataxshow(index);
+% end
+% load('C_mxy_corr_q2X20-100tol8_CTMb');
+% for x = 1:numel(X)
+%     mx1 = mx1b(x,:);
+%     my1 = my1b(x,:);
+% 
+%     [~,index1] = min(diff(sqrt(mx1.^2+my1.^2)));
+%     beginning = max(1,index1-5);
+%     ending = min(numel(ts),index1+6);
+%     datax = ts;datax = datax(beginning:1:ending);
+%     datay = sqrt(mx1.^2+my1.^2); datay = datay(beginning:1:ending);
+%     dataxshow = datax(1):(datax(2)-datax(1))/10:datax(end);
+% 
+%     P = polyfit(datax,datay,7);
+%     D = polyder(P);
+% 
+%     curve1 = polyval(P,dataxshow);
+%     curve2 = polyval(D,dataxshow);
+%     [val,index] = min(curve2);
+%     tcs(2*x) = dataxshow(index);
+% end
+% X = 20:4:100;
+% plot(X,tcs,'o');hold on;
+
+x = 1;
+mx1 = mx2(x,:);
+my1 = my2(x,:);
+
+[~,index1] = min(diff(sqrt(mx1.^2+my1.^2)));
 beginning = 1;
-ending = numel(ts);
-datax = ts;datax = datax(beginning:1:ending);
+ending = 511;
+datax = beginning:ending;
 datay = sqrt(mx1.^2+my1.^2); datay = datay(beginning:1:ending);
-dataxshow = datax(1):0.00001:datax(end);
+dataxshow = datax(1):(datax(2)-datax(1))/10:datax(end);
 
 P = polyfit(datax,datay,4);
 D = polyder(P);
 
-curve1 = polyval(P,dataxshow);
-curve2 = polyval(D,dataxshow);
+curve1 = polyval(P,datax);
+curve2 = polyval(D,datax);
 [val,index] = min(curve2);
-dataxshow(index)
+index+beginning-1
 
 subplot(1,2,1);
 plot(datax,datay,'.-');hold on;
-plot(dataxshow,curve1,'-');hold on;
-plot(dataxshow(index),curve1(index),'o');
+plot(datax,curve1,'-');hold on;
+plot(datax(index),curve1(index),'o');
 legend('data','fit','steepest slope');
 
 subplot(1,2,2);
-plot(datax(2:end)-(datax(2)-datax(1))/2,diff(datay)/(datax(2)-datax(1)),'.-');hold on;
-plot(dataxshow,curve2,'-');hold on;
-plot(dataxshow(index),curve2(index),'o');
+plot(datax(2:end),diff(datay)/(datax(2)-datax(1)),'.-');hold on;
+plot(datax+(datax(2)-datax(1))/2,curve2,'-');hold on;
+plot(datax(index)+(datax(2)-datax(1))/2,curve2(index),'o');
 legend('data','fit','minimum');
 %}
 %{

@@ -1,6 +1,6 @@
 function f = f_exact(ts)
 
-    f = zeros(numel(ts),1); 
+    f = zeros(1,numel(ts)); 
     
     for t = 1:numel(ts)
         

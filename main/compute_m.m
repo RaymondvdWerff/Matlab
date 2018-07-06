@@ -32,17 +32,19 @@ function [mx,my,iters,tictocs] = compute_m(Q,q,X,tol,maxiter,ts,func,h)
         
         tic
         [C,T] = beginmatrices(Qsq,A,X,1);
+        
         [C,T,iter] = func(A,C,T,X,tol,maxiter,temp);
+        
+        tictocs(t) = toc;
+        iters(t) = iter;
         
         env_half = ncon({C,C,T,T},{[-1,1],[2,3],[1,-3,2],[3,-4,-2]});
         env = ncon({env_half,env_half},{[1,2,-1,-2],[2,1,-3,-4]});
         Z = ncon({env,A},{[1,2,3,4],[1,2,3,4]});
-        
+
         mx(t) = ncon({env,Bx},{[1,2,3,4],[1,2,3,4]})/Z;
         my(t) = ncon({env,By},{[1,2,3,4],[1,2,3,4]})/Z;
         %n = ncon({env,B},{[1,2,3,4],[1,2,3,4]})/Z;
         %m(t) = (q*n-1)/(q-1);
-        tictocs(t) = toc;
-        iters(t) = iter;      
     end
 end

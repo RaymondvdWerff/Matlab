@@ -9,9 +9,9 @@ function [E,iters,tictocs] = compute_E(Q,q,X,tol,maxiter,ts,func)
     
     delta_4D = zeros(q,q,q,q);for i=1:q; delta_4D(i,i,i,i)=1; end
 
-    Qsq = sqrtm(Q(q,ts(1),0));
-    A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
-    [C,T] = beginmatrices(Qsq,A,X,0);
+    %Qsq = sqrtm(Q(q,ts(1),0));
+    %A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
+    %[C,T] = beginmatrices(Qsq,A,X,1);
     
     for t = 1:numel(ts)
         
@@ -21,12 +21,14 @@ function [E,iters,tictocs] = compute_E(Q,q,X,tol,maxiter,ts,func)
         tic
         Qsq = sqrtm(Q(q,temp,0));
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
+        [C,T] = beginmatrices(Qsq,A,X,1);
         
         [C,T,iter1] = func(A,C,T,X,tol,maxiter,temp);
         E1 = log(compute_kappa(A,C,T));
         
         Qsq = sqrtm(Q(q,temp+delta_t,0));
         A = ncon({delta_4D,Qsq,Qsq,Qsq,Qsq},{[1,2,3,4],[-1,1],[-2,2],[-3,3],[-4,4]});
+        [C,T] = beginmatrices(Qsq,A,X,1);
         
         [C,T,iter2] = func(A,C,T,X,tol,maxiter,temp+delta_t);
         E2 = log(compute_kappa(A,C,T));

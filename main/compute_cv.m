@@ -1,4 +1,4 @@
-function [cv,iters,tictocs] = compute_cv2(Q,q,X,tol,maxiter,ts,func)
+function [cv,iters,tictocs] = compute_cv(Q,q,X,tol,maxiter,ts,func)
     
     delta_t = 1e-5;
     

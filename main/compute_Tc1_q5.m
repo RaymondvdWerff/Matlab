@@ -1,15 +1,19 @@
-load('C_corr_q5X20-100tol6_FPCM.mat');
+load('C_evs_q5X20-100tol6_FPCM_l.mat');
 
+xs = log(evs(:,:,2)./evs(:,:,5));
+ys = -log(evs(:,:,2)); 
+        
 i=1;
-% ts_ends = 20:1:100;
-% Tcs = zeros(1,numel(ts_ends));
-% errs = zeros(1,numel(ts_ends));
+ts_begs = ts(1:81);
+Tcs = zeros(1,numel(ts_begs));
+errs = zeros(1,numel(ts_begs));
        
-for bla = 1:1
+for ts_beg = 1:81
 
-    ts_beg = 67;
+%     ts_beg = 1;
     ts_end = 101;
     ts_fit = ts_beg:ts_end;
+    
     corr = zeros(1,numel(ts_fit));
     cerr = zeros(1,numel(ts_fit));
     
@@ -36,7 +40,7 @@ for bla = 1:1
 
     xdata = ts(ts_beg:ts_end);xdata = reshape(xdata,numel(xdata),1);
     ydata = corr;ydata = reshape(ydata,numel(ydata),1);
-    xdata_show = ts(ts_beg):(ts(2)-ts(1))/100:ts(ts_end+3);
+    xdata_show = ts(ts_beg):(ts(2)-ts(1))/100:ts(ts_end)+1*(ts(2)-ts(1));
 
     myfittype = fittype('a*exp(b*(abs(c-x)/c)^(-1/2))');
     myfittopts = fitoptions('Method','NonLinearLeastSquares','StartPoint',[0.01,2,1],'Weight',w);
@@ -44,22 +48,30 @@ for bla = 1:1
     coeff = coeffvalues(myfit);a=coeff(1);b=coeff(2);Tc=coeff(3);
     err_coeff = confint(myfit);err_Tc = err_coeff(6);
 
-%     Tcs(i) = Tc;
-%     errs(i) = abs(Tc-err_Tc);
-% 
-    disp(['Tc from fit: ',num2str(Tc)]);
-    disp(['Error from fit: ',num2str(abs(Tc-err_Tc))]);
+    Tcs(i) = Tc;
+    errs(i) = abs(Tc-err_Tc);
 
-    errorbar(xdata,ydata,cerr,'b.');hold on;
-    plot(xdata_show,a*exp(b*abs((xdata_show-Tc)/Tc).^(-1/2)),'r-');hold on;
-    plot([Tc,Tc],[0,3000],'k--');hold on;
-    xlabel('temperature');
-    ylabel('correlation length');
-    title('Correlation length as a function of temperature for the 5-state clock model');
-    legend('data','fit');
+%     disp(['Tc from fit: ',num2str(Tc)]);
+%     disp(['Error from fit: ',num2str(abs(Tc-err_Tc))]);
+% 
+%     errorbar(xdata,ydata,cerr,'b.');hold on;
+%     plot(xdata_show,a*exp(b*abs((xdata_show-Tc)/Tc).^(-1/2)),'r-');hold on;
+%     plot([Tc,Tc],[0,max(a*exp(b*abs((xdata_show-Tc)/Tc).^(-1/2)))],'k--');hold on;
+%     set(gca,'fontsize',15)
+%     xlabel('$T$','fontsize',25);
+%     ylabel('$\xi$','fontsize',25);
+%     legend('data','fit');
     i = i+1;
 end
+% for x = 1:numel(X)
+%     plot(ts,1./ys(x,:));hold on;
+% end
 
-% errorbar(ts_ends,Tcs,errs,'.');hold on;
-% xlabel('ending');
-% ylabel('Tc');
+subplot(2,1,1);
+errorbar(ts_begs,Tcs,errs,'b.');hold on;
+plot([ts_begs(1),ts_begs(end)],[max(Tcs+errs),max(Tcs+errs)],'k--');
+plot([ts_begs(1),ts_begs(end)],[min(Tcs-errs),min(Tcs-errs)],'k--');
+set(gca,'fontsize',15);
+xlabel('$T_{start}$');
+ylabel('$T_1$');
+xlim([ts_begs(1),ts_begs(end)]);
